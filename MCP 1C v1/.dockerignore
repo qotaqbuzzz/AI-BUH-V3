@@ -1,0 +1,21 @@
+node_modules
+dist
+.env
+*.env
+
+# Runtime logs and ad-hoc report exports at repo root
+*.json
+!package.json
+!package-lock.json
+!packages/kz-accounts/src/data/chart.json
+
+# Source not needed in build context
+apps/mcp/src/skills
+scripts
+tools
+.adal
+.claude
+
+# Test artifacts
+**/*.test.ts
+**/*.spec.ts

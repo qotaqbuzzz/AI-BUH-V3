@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "paths": {
+      "@aibos/onec-client": ["./packages/onec-client/src/index.ts"],
+      "@aibos/services": ["./packages/services/src/index.ts"],
+      "@aibos/kz-accounts": ["./packages/kz-accounts/src/index.ts"]
+    }
+  },
+  "include": [
+    "packages/**/*",
+    "apps/mcp/src/**/*"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

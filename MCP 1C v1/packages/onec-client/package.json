@@ -1,0 +1,9 @@
+{
+  "name": "@aibos/onec-client",
+  "version": "1.0.0",
+  "description": "1C:Бухгалтерия OData HTTP client",
+  "type": "module",
+  "main": "../../dist/packages/onec-client/src/index.js",
+  "private": true,
+  "engines": { "node": ">=18.0.0" }
+}

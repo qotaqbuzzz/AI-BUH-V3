@@ -1,0 +1,33 @@
+{
+  "name": "onec-kz-mcp",
+  "version": "1.0.0",
+  "description": "Universal MCP server for 1C:Бухгалтерия Kazakhstan — any industry (agro, manufacturing, trade, services, construction, transport) via OData as Claude tools",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "esbuild apps/mcp/src/index.ts --bundle --platform=node --format=esm --outfile=dist/server.bundle.js --tsconfig=tsconfig.json --packages=external --alias:@aibos/services=./packages/services/src/index.ts --alias:@aibos/onec-client=./packages/onec-client/src/index.ts --alias:@aibos/kz-accounts=./packages/kz-accounts/src/index.ts && node -e \"const{cpSync,mkdirSync}=require('fs');mkdirSync('dist/data',{recursive:true});cpSync('packages/kz-accounts/src/data/chart.json','dist/data/chart.json')\"",
+    "build:tsc": "tsc -p tsconfig.build.json",
+    "start": "node dist/server.bundle.js",
+    "start:dev": "tsx apps/mcp/src/index.ts",
+    "dev": "tsx --watch apps/mcp/src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test packages/services/src/**/*.test.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "dotenv": "^16.4.5",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,25 @@
+---
+category: InformationRegister
+properties: 3
+relations: 3
+---
+
+# InformationRegister_НачислениеАмортизацииОСБухгалтерскийУчет
+
+**Category:** InformationRegister  
+**Properties:** 3  
+**Relations:** 3
+
+## Properties
+
+| Name | Type | Nullable |
+|------|------|----------|
+| Recorder | Edm.String | false |
+| RecordSet | InformationRegister_НачислениеАмортизацииОСБухгалтерскийУчет_RowType | false |
+| Recorder_Type | Edm.String | false |
+
+## Related Entities
+
+- [[Catalog_Организации]] — Организация
+- [[Catalog_ОсновныеСредства]] — ОсновноеСредство
+- [[Catalog_ПодразделенияОрганизаций]] — СтруктурноеПодразделение

@@ -1,0 +1,9 @@
+{
+  "name": "@aibos/kz-accounts",
+  "version": "1.0.0",
+  "description": "Kazakhstan standard chart of accounts (Типовой план счетов РК) — static reference data service",
+  "type": "module",
+  "main": "../../dist/packages/kz-accounts/src/index.js",
+  "private": true,
+  "engines": { "node": ">=18.0.0" }
+}

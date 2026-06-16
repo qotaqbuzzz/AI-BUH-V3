@@ -1,0 +1,24 @@
+# Secrets — never commit
+.env
+.env.local
+*.env
+
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+
+# Runtime data (SQLite registry, logs)
+agent-deepseek/data/
+*.log
+
+# IDE / OS
+.obsidian/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo

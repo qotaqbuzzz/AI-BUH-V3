@@ -1,0 +1,9 @@
+{
+  "name": "@aibos/services",
+  "version": "1.0.0",
+  "description": "Shared 1C business-logic services",
+  "type": "module",
+  "main": "../../dist/packages/services/src/index.js",
+  "private": true,
+  "engines": { "node": ">=18.0.0" }
+}
