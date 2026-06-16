@@ -18,6 +18,7 @@ RUN ./node_modules/.bin/esbuild apps/mcp/src/http-index.ts \
       --bundle \
       --platform=node \
       --format=esm \
+      "--banner:js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);" \
       --outfile=dist/http-server.bundle.mjs \
       --tsconfig=tsconfig.json \
       --alias:@aibos/services=./packages/services/src/index.ts \
