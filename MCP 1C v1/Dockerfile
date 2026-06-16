@@ -41,10 +41,11 @@ COPY Entities ./Entities
 
 ENV NODE_ENV=production \
     PORT=3000 \
-    # Point EntitySchemaService at the copied Entities folder.
-    # Without this, server.ts falls back to resolve(__dirname, "../../../Entities")
-    # which would resolve incorrectly relative to the bundle location.
-    ENTITIES_DIR=/app/Entities
+    ENTITIES_DIR=/app/Entities \
+    CONNECTIONS_FILE=/app/data/connections.json
+
+# Ensure data dir exists and is writable by the mcp user
+RUN mkdir -p /app/data
 
 EXPOSE 3000
 

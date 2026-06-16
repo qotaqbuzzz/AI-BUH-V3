@@ -11,8 +11,10 @@
  *   DELETE /mcp   — Explicit session termination
  *   GET    /health — Liveness probe
  *
- * Initial connection headers (required):
- *   Authorization:        Basic <base64(username:password)>   <- 1C credentials
+ * Initial connection headers — pick ONE method:
+ *   X-Connection-Name: <name>                                 <- preferred: admin-registered connection
+ *   — OR —
+ *   Authorization:        Basic <base64(username:password)>   <- raw 1C credentials
  *   X-OnecUrl:            https://your-1c-host/               <- 1C base URL
  *   X-OnecDefaultOrgGuid: <guid>                              <- optional
  *
@@ -24,9 +26,11 @@ import "dotenv/config";
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { loadConfigFromRequest } from "./config.js";
+import { loadConfigFromRequest, loadConfigFromConnectionEntry } from "./config.js";
 import { getOrCreateSession, deleteSession, getSessionCount } from "./session-registry.js";
 import { withOrgContext } from "./tools/utils.js";
+import { getConnection } from "./connections-store.js";
+import { startAdminBot } from "./telegram-bot.js";
 
 const PORT = parseInt(process.env.PORT ?? "3000", 10);
 
@@ -70,11 +74,18 @@ async function handleMcp(req: IncomingMessage, res: ServerResponse): Promise<voi
 
     let config;
     try {
-      config = loadConfigFromRequest(
-        header(req, "authorization"),
-        header(req, "x-onecurl"),
-        header(req, "x-onecdefaultorgguid"),
-      );
+      const connName = header(req, "x-connection-name");
+      if (connName) {
+        const entry = getConnection(connName);
+        if (!entry) throw new Error(`Unknown connection: "${connName}". Register it via the admin Telegram bot (/add).`);
+        config = loadConfigFromConnectionEntry(entry);
+      } else {
+        config = loadConfigFromRequest(
+          header(req, "authorization"),
+          header(req, "x-onecurl"),
+          header(req, "x-onecdefaultorgguid"),
+        );
+      }
     } catch (err) {
       sendJson(res, 401, { error: err instanceof Error ? err.message : String(err) });
       return;
@@ -159,6 +170,8 @@ const httpServer = createHttpServer(async (req, res) => {
 
   sendJson(res, 404, { error: "Not found" });
 });
+
+startAdminBot();
 
 httpServer.listen(PORT, () => {
   console.log(`onec-kz MCP HTTP server listening on port ${PORT}`);

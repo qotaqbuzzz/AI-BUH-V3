@@ -128,3 +128,30 @@ export function loadConfig(): AppConfig {
     defaultOrgGuid: optional("ONEC_DEFAULT_ORG_GUID", "") || undefined,
   };
 }
+
+/** Build AppConfig from a named connection registered via the admin Telegram bot. */
+export function loadConfigFromConnectionEntry(entry: {
+  baseUrl: string;
+  username: string;
+  password: string;
+}): AppConfig {
+  return {
+    onec: {
+      baseUrl:    entry.baseUrl,
+      username:   entry.username,
+      password:   entry.password,
+      timeoutMs:  parseInt(optional("ONEC_TIMEOUT_MS", "30000"), 10),
+      maxRetries: parseInt(optional("ONEC_MAX_RETRIES", "3"), 10),
+    },
+    docflow: {
+      baseUrl:    optional("DOCFLOW_BASE_URL", "not-configured").replace(/\/$/, ""),
+      username:   optional("DOCFLOW_USERNAME", ""),
+      password:   optional("DOCFLOW_PASSWORD", ""),
+      timeoutMs:  parseInt(optional("DOCFLOW_TIMEOUT_MS", "30000"), 10),
+      maxRetries: parseInt(optional("DOCFLOW_MAX_RETRIES", "3"), 10),
+    },
+    logLevel:      optional("ONEC_LOG_LEVEL", "info"),
+    entitiesDir:   optional("ENTITIES_DIR", ""),
+    defaultOrgGuid: undefined,
+  };
+}
