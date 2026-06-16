@@ -45,13 +45,11 @@ ENV NODE_ENV=production \
     ENTITIES_DIR=/app/Entities \
     CONNECTIONS_FILE=/app/data/connections.json
 
-# Ensure data dir exists and is writable by the mcp user
-RUN mkdir -p /app/data
-
 EXPOSE 3000
 
-# Run as non-root
-RUN addgroup -S mcp && adduser -S mcp -G mcp
+# Create non-root user, then make /app/data writable by that user
+RUN addgroup -S mcp && adduser -S mcp -G mcp \
+ && mkdir -p /app/data && chown mcp:mcp /app/data
 USER mcp
 
 CMD ["node", "http-server.bundle.mjs"]
