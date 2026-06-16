@@ -1,0 +1,23 @@
+app = "ai-buh-v3"
+primary_region = "ams"   # Amsterdam — closest Fly.io region to Kazakhstan
+
+[build]
+  # Dockerfile is in the same directory as this fly.toml
+
+[env]
+  NODE_ENV     = "production"
+  PORT         = "3000"
+  ENTITIES_DIR = "/app/Entities"
+  # ONEC_ALLOW_HTTP = "true"   # uncomment only for HTTP 1C endpoints
+
+[http_service]
+  internal_port        = 3000
+  force_https          = true
+  auto_stop_machines   = true
+  auto_start_machines  = true
+  min_machines_running = 1     # keep 1 alive — avoids cold start on first user
+
+[[vm]]
+  memory   = "512mb"
+  cpu_kind = "shared"
+  cpus     = 1
