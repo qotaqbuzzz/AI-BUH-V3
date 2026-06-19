@@ -1455,8 +1455,8 @@ export class ReportsService {
     const [bankIn, bankOut, cashIn, cashOut] = await Promise.all([
       this.client.getCollection<PayDoc>("Document_ПлатежноеПоручениеВходящее",  { filter: f, select: "Date,СуммаДокумента", top: 5000 }).catch(() => [] as PayDoc[]),
       this.client.getCollection<PayDoc>("Document_ПлатежноеПоручениеИсходящее", { filter: f, select: "Date,СуммаДокумента", top: 5000 }).catch(() => [] as PayDoc[]),
-      this.client.getCollection<PayDoc>("Document_КассовыйОрдерПриходный",      { filter: f, select: "Date,СуммаДокумента", top: 5000 }).catch(() => [] as PayDoc[]),
-      this.client.getCollection<PayDoc>("Document_КассовыйОрдерРасходный",      { filter: f, select: "Date,СуммаДокумента", top: 5000 }).catch(() => [] as PayDoc[]),
+      this.client.getCollection<PayDoc>("Document_ПриходныйКассовыйОрдер",      { filter: f, select: "Date,СуммаДокумента", top: 5000 }).catch(() => [] as PayDoc[]),
+      this.client.getCollection<PayDoc>("Document_РасходныйКассовыйОрдер",      { filter: f, select: "Date,СуммаДокумента", top: 5000 }).catch(() => [] as PayDoc[]),
     ]);
 
     const monthMap = new Map<string, { inflow: number; outflow: number }>();
@@ -1489,8 +1489,8 @@ export class ReportsService {
       byType: [
         { type: "Bank In (ПлатежноеПоручениеВходящее)", amount: sum(bankIn) },
         { type: "Bank Out (ПлатежноеПоручениеИсходящее)", amount: sum(bankOut) },
-        { type: "Cash In (КассовыйОрдерПриходный)", amount: sum(cashIn) },
-        { type: "Cash Out (КассовыйОрдерРасходный)", amount: sum(cashOut) },
+        { type: "Cash In (ПриходныйКассовыйОрдер)", amount: sum(cashIn) },
+        { type: "Cash Out (РасходныйКассовыйОрдер)", amount: sum(cashOut) },
       ],
     };
   }

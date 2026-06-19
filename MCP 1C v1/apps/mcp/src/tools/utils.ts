@@ -1,14 +1,20 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { OneCError } from "@aibos/onec-client";
 import type { OrgContext } from "../org-context.js";
+import { OrgContextError } from "../org-context.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ToolResult = any;
 
 export function wrapError(e: unknown): ToolResult {
-  const text = e instanceof OneCError
-    ? e.message
-    : (e instanceof Error ? e.message : String(e));
+  let text: string;
+  if (e instanceof OrgContextError) {
+    text = e.message;
+  } else if (e instanceof OneCError) {
+    text = e.message;
+  } else {
+    text = e instanceof Error ? e.message : String(e);
+  }
   return { isError: true, content: [{ type: "text" as const, text }] };
 }
 

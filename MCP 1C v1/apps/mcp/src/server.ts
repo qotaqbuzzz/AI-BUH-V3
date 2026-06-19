@@ -15,7 +15,6 @@ import { DocumentGeneratorService } from "@aibos/services";
 import { registerCatalogTools } from "./tools/catalog.tools.js";
 import { registerDocumentTools } from "./tools/document.tools.js";
 import { registerRegisterTools } from "./tools/register.tools.js";
-import { registerProductionTools } from "./tools/production.tools.js";
 import { registerAuditorTools } from "./tools/auditor.tools.js";
 import { registerAnalyticsTools } from "./tools/analytics.tools.js";
 import { registerMetadataTools } from "./tools/metadata.tools.js";
@@ -28,25 +27,54 @@ import { registerAnomalyMLTools } from "./tools/anomaly-ml.tools.js";
 import { InvestigationService } from "@aibos/services";
 import { registerInvestigationTools } from "./tools/investigation.tools.js";
 import { registerDueDiligenceTools } from "./tools/duediligence.tools.js";
-import { registerStockTools } from "./tools/stock.tools.js";
 import { AccountsService } from "@aibos/kz-accounts";
 import { registerAccountsTools } from "./tools/accounts.tools.js";
 import { AccountAnalysisService } from "@aibos/services";
 import { registerAccountAnalysisTools } from "./tools/account-analysis.tools.js";
 import { IntegrityValidator, TaxValidator, PeriodCloseValidator, DocumentValidator, ReconciliationValidator, DrillDownService, CostingService, DocumentScannerService } from "@aibos/services";
-import { registerIntegrityValidationTools } from "./tools/validation-integrity.tools.js";
-import { registerTaxValidationTools } from "./tools/validation-tax.tools.js";
-import { registerPeriodCloseValidationTools } from "./tools/validation-period-close.tools.js";
-import { registerDocumentValidationTools } from "./tools/validation-document.tools.js";
-import { registerReconciliationValidationTools } from "./tools/validation-reconciliation.tools.js";
+import { registerValidationTools } from "./tools/validation.tools.js";
 import { registerDrillDownTools } from "./tools/validation-drilldown.tools.js";
-import { registerCostingTools } from "./tools/costing.tools.js";
 import { registerScanTools } from "./tools/scan.tools.js";
 import { registerFullReportTools } from "./tools/fullreport.tools.js";
 import { EntitySchemaService } from "@aibos/services";
 import { registerEntitySchemaTools } from "./tools/entity-schema.tools.js";
 import { GuidResolverService } from "@aibos/services";
 import { registerGuidResolverTools } from "./tools/guid-resolver.tools.js";
+import { SetupAuditService } from "@aibos/services";
+import { registerSetupAuditTools } from "./tools/setup-audit.tools.js";
+import { FixedAssetService } from "@aibos/services";
+import { registerFixedAssetTools } from "./tools/fixed-asset.tools.js";
+import { CashManagementService } from "@aibos/services";
+import { registerCashTools } from "./tools/cash.tools.js";
+import { PayrollService } from "@aibos/services";
+import { registerPayrollTools } from "./tools/payroll.tools.js";
+import { SupplyChainAnalyticsService } from "@aibos/services";
+import { registerSupplyChainTools } from "./tools/supply-chain.tools.js";
+import { TaxFilingService } from "@aibos/services";
+import { registerTaxFilingTools } from "./tools/tax-filing.tools.js";
+import { ConsolidationService } from "@aibos/services";
+import { registerConsolidationTools } from "./tools/consolidation.tools.js";
+import { BudgetService } from "@aibos/services";
+import { registerBudgetTools } from "./tools/budget.tools.js";
+import { CostCenterService } from "@aibos/services";
+import { registerCostCenterTools } from "./tools/cost-center.tools.js";
+import { CustomsService } from "@aibos/services";
+import { registerCustomsTools } from "./tools/customs.tools.js";
+import { RelatedPartyService } from "@aibos/services";
+import { registerRelatedPartyTools } from "./tools/related-party.tools.js";
+import { ProvisionService } from "@aibos/services";
+import { registerProvisionTools } from "./tools/provisions.tools.js";
+import { IntangibleAssetService } from "@aibos/services";
+import { registerIntangibleAssetTools } from "./tools/intangible-asset.tools.js";
+import { AssetTransferService } from "@aibos/services";
+import { registerAssetTransferTools } from "./tools/asset-transfer.tools.js";
+import { registerWorkflowCatalogTools } from "./tools/workflow-catalog.tools.js";
+import { EsfService } from "@aibos/services";
+import { registerEsfTools } from "./tools/esf.tools.js";
+import { ToolDiscoveryService } from "@aibos/services";
+import { registerToolDiscoveryTools } from "./tools/tool-discovery.tools.js";
+import { registerAnswerTools } from "./tools/answer.tools.js";
+import { registerSkillLookupTools } from "./tools/skill-lookup.tools.js";
 import type { OrgContext } from "./org-context.js";
 import { buildOrgContext } from "./org-context.js";
 import { fileURLToPath } from "url";
@@ -86,46 +114,98 @@ export async function createServer(config: AppConfig): Promise<{ server: McpServ
   const entitiesDir = config.entitiesDir || resolve(__dirname, "../../../Entities");
   const entitySchemaService = new EntitySchemaService(entitiesDir);
   const guidResolverService = new GuidResolverService(client, entitySchemaService);
+  const setupAuditService = new SetupAuditService(client, reportsService);
+  const fixedAssetService = new FixedAssetService(client, registerService);
+  const cashManagementService = new CashManagementService(client, registerService);
+  const payrollService = new PayrollService(client, registerService);
+  const supplyChainService = new SupplyChainAnalyticsService(client);
+  const taxFilingService = new TaxFilingService(client, registerService);
+  const consolidationService = new ConsolidationService(client);
+  const budgetService = new BudgetService(client, registerService);
+  const costCenterService = new CostCenterService(client, registerService);
+  const customsService = new CustomsService(client);
+  const relatedPartyService = new RelatedPartyService(client);
+  const provisionService = new ProvisionService(client, registerService);
+  const intangibleAssetService = new IntangibleAssetService(client, registerService);
+  const assetTransferService = new AssetTransferService(client);
+  const esfService = new EsfService(client);
+  const toolDiscoveryService = new ToolDiscoveryService(
+    resolve(__dirname, "./data/tool-registry.json"),
+    resolve(__dirname, "./data/workflows.json"),
+  );
 
   // ── Resolve organization list once at startup ─────────────────────────────
-  // This eliminates the LLM-stale-GUID bug: all handlers call resolveOrg(provided)
-  // instead of using the LLM-supplied GUID directly. An unknown/hallucinated GUID is
-  // silently replaced with the tenant default. Set ONEC_DEFAULT_ORG_GUID in .env for
-  // multi-org databases; single-org databases are detected automatically.
+  // All handlers call resolveOrg(provided) — unknown/zero GUIDs throw OrgContextError
+  // (strict binding, v2). Set ONEC_DEFAULT_ORG_GUID in .env for multi-org databases;
+  // single-org databases are detected automatically.
   const orgCtx = await buildOrgContext(catalogService, config.defaultOrgGuid);
 
-  const server = new McpServer({
-    name: "onec-kz",
-    version: "1.0.0",
-  });
+  const server = new McpServer(
+    {
+      name: "onec-kz",
+      version: "1.0.0",
+    },
+    {
+      instructions: [
+        "You are connected to a 1C:Enterprise Kazakhstan accounting MCP server.",
+        "",
+        "ROUTING POLICY — follow on every accounting task:",
+        "1. FIRST call `onec_answer(question)` for any receivables, payables, or cash question.",
+        "   It returns a structured answer with provenance trail (which sources were queried, row counts, timing).",
+        "2. If `onec_answer` returns 'unknown intent', THEN call `onec_find_tool` to discover the right primitive tool.",
+        "3. Call the recommended primitive tool(s) with real parameters.",
+        "",
+        "Never invent numbers. Every numeric answer must come from a tool result.",
+        "",
+        "If a search returns no results because the 1C OData endpoint rejects `contains`,",
+        "use `onec_get_report` with `reportType=debtors|creditors|contractor-balance` instead",
+        "of `onec_search_contractors` — those reports work without text search.",
+      ].join("\n"),
+    },
+  );
 
   registerCatalogTools(server, catalogService);
   registerDocumentTools(server, documentService);
   registerRegisterTools(server, registerService);
-  registerProductionTools(server, productionService);
   registerAuditorTools(server, auditorService, registerService, reportsService);
   registerAnalyticsTools(server, analyticsService);
   registerMetadataTools(server, metadataService);
-  registerReportsTools(server, reportsService);
+  registerReportsTools(server, reportsService, productionService, costingService);
   registerAnomalyMLTools(server, anomalyMLService, alertService);
   registerInvestigationTools(server, investigationService);
   registerDocflowTools(server, docflowService);
   registerGeneratorTools(server, generatorService);
   registerDueDiligenceTools(server, reportsService);
-  registerStockTools(server, reportsService);
   registerAccountsTools(server, accountsService);
-  registerIntegrityValidationTools(server, integrityValidator);
-  registerTaxValidationTools(server, taxValidator);
-  registerPeriodCloseValidationTools(server, periodCloseValidator);
-  registerDocumentValidationTools(server, documentValidator);
-  registerReconciliationValidationTools(server, reconciliationValidator);
+  registerValidationTools(server, integrityValidator, taxValidator, periodCloseValidator, documentValidator, reconciliationValidator);
   registerDrillDownTools(server, drillDownService);
-  registerCostingTools(server, costingService);
   registerAccountAnalysisTools(server, accountAnalysisService);
   registerScanTools(server, documentScannerService);
   registerFullReportTools(server, reportsService, catalogService, accountsService);
   registerEntitySchemaTools(server, entitySchemaService);
   registerGuidResolverTools(server, guidResolverService);
+  registerSetupAuditTools(server, setupAuditService);
+  registerFixedAssetTools(server, fixedAssetService);
+  registerCashTools(server, cashManagementService);
+  registerPayrollTools(server, payrollService);
+  registerSupplyChainTools(server, supplyChainService);
+  registerTaxFilingTools(server, taxFilingService);
+  registerConsolidationTools(server, consolidationService);
+  registerBudgetTools(server, budgetService);
+  registerCostCenterTools(server, costCenterService);
+  registerCustomsTools(server, customsService);
+  registerRelatedPartyTools(server, relatedPartyService);
+  registerProvisionTools(server, provisionService);
+  registerIntangibleAssetTools(server, intangibleAssetService);
+  registerAssetTransferTools(server, assetTransferService);
+  registerWorkflowCatalogTools(server, resolve(__dirname, "../../../ONE_C_WORKFLOWS.md"));
+  registerEsfTools(server, esfService);
+  // Answer composer — registered before the routing tool so onec_find_tool's count includes it.
+  registerAnswerTools(server, reportsService, catalogService);
+  // Skill docs lookup — reads restored kz-agro-*.md files
+  registerSkillLookupTools(server, resolve(__dirname, "../../skills"));
+  // Routing tool — registered LAST so its description can quote the final tool count.
+  registerToolDiscoveryTools(server, toolDiscoveryService);
 
   // ── Resources — static and live URIs ──────────────────────────────────────
 

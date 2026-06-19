@@ -3,6 +3,10 @@
 .env.local
 *.env
 
+# Duplicate agent skill installs (canonical: .cursor/skills, .claude/skills)
+/skills/
+/data/
+
 # Dependencies
 node_modules/
 

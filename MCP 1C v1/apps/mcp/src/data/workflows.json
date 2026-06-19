@@ -1,0 +1,175 @@
+[
+  {
+    "id": "month_close",
+    "name": "Month-end close",
+    "description": "Standard month-end accounting close process: verify unposted documents, validate close readiness, confirm opening balances, post ЗакрытиеМесяца.",
+    "keywords": ["close", "month-end", "month end", "EOM", "закрытие", "закрытие месяца", "закрыть месяц"],
+    "persona": ["accountant", "auditor"],
+    "steps": [
+      { "tool": "onec_get_unposted_documents", "purpose": "Find pending documents that block the close" },
+      { "tool": "onec_validate_period_close_readiness", "purpose": "Pre-flight gate check before ЗакрытиеМесяца" },
+      { "tool": "onec_validate_depreciation_completeness", "purpose": "Confirm ОС depreciation accrued for the period" },
+      { "tool": "onec_validate_wip_closure", "purpose": "Confirm WIP balances closed to COGS / FG" },
+      { "tool": "onec_validate_cogs_basis", "purpose": "Validate COGS recognition basis" },
+      { "tool": "onec_validate_accrual_alignment", "purpose": "Verify accruals align with documents" },
+      { "tool": "onec_verify_opening_balances", "purpose": "Confirm carry-forward integrity" },
+      { "tool": "onec_get_month_close_status", "purpose": "Confirm ЗакрытиеМесяца posted successfully" }
+    ]
+  },
+  {
+    "id": "vat_filing",
+    "name": "VAT / ЭСФ filing",
+    "description": "Quarterly VAT (НДС) preparation: validate ЭСФ coverage, reconcile VAT charged vs revenue and VAT recoverable vs purchases, drill into missing ЭСФ.",
+    "keywords": ["vat", "НДС", "ЭСФ", "esf", "tax invoice", "электронный счёт", "VAT filing", "декларация НДС"],
+    "persona": ["accountant", "auditor"],
+    "steps": [
+      { "tool": "onec_get_vat_register", "purpose": "Get VAT register entries for the period" },
+      { "tool": "onec_validate_esf_coverage", "purpose": "Confirm every taxable doc has a matching ЭСФ" },
+      { "tool": "onec_drill_missing_esf", "purpose": "Drill into documents without ЭСФ" },
+      { "tool": "onec_validate_vat_charged_vs_revenue", "purpose": "Reconcile VAT output vs revenue base" },
+      { "tool": "onec_validate_vat_recoverable_vs_purchases", "purpose": "Reconcile input VAT vs purchases" },
+      { "tool": "onec_get_esf_submission_status", "purpose": "Submission status snapshot of all ЭСФ" },
+      { "tool": "onec_get_esf_errors", "purpose": "List ЭСФ rejected or with errors" }
+    ]
+  },
+  {
+    "id": "payroll_close",
+    "name": "Payroll close",
+    "description": "End-of-month payroll process: review summary, validate accruals, confirm tax rates, verify fund remittance.",
+    "keywords": ["payroll", "salary", "wage", "зарплата", "зарплата за месяц", "payroll close", "ФОТ"],
+    "persona": ["accountant", "hr"],
+    "steps": [
+      { "tool": "onec_get_payroll_summary", "purpose": "Aggregate accruals for the period" },
+      { "tool": "onec_drill_payroll_by_department", "purpose": "Break down accruals by cost center" },
+      { "tool": "onec_validate_salary_completeness", "purpose": "Confirm every employee accrued" },
+      { "tool": "onec_validate_payroll_tax_rates", "purpose": "Verify ОПВ 10%, СО 3.5%, ВОСМС 3%, ИПН 10%" },
+      { "tool": "onec_validate_payroll_deductions", "purpose": "Reconcile deductions vs accruals" },
+      { "tool": "onec_validate_payroll_accrual_balance", "purpose": "GL account 3350 reconciliation" },
+      { "tool": "onec_get_payroll_taxes_summary", "purpose": "Summary of all payroll-related taxes due" },
+      { "tool": "onec_validate_fund_remittance_timeliness", "purpose": "Confirm funds remitted within statutory deadline" }
+    ]
+  },
+  {
+    "id": "year_end_reform",
+    "name": "Year-end reformation",
+    "description": "Annual close: KPN estimate, P&L summary, year-end month-close gates, opening balance verification for new year.",
+    "keywords": ["year end", "year-end", "annual close", "реформация", "КПН годовая", "годовое закрытие"],
+    "persona": ["accountant", "controller", "cfo"],
+    "steps": [
+      { "tool": "onec_get_pl_summary", "purpose": "Full-year P&L roll-up" },
+      { "tool": "onec_get_kpn_estimate", "purpose": "Estimate corporate income tax" },
+      { "tool": "onec_validate_period_close_readiness", "purpose": "Confirm all gates green" },
+      { "tool": "onec_get_month_close_status", "purpose": "Confirm December close posted" },
+      { "tool": "onec_verify_opening_balances", "purpose": "Verify new-year opening balances roll-forward correctly" }
+    ]
+  },
+  {
+    "id": "fa_audit",
+    "name": "Fixed-asset (ОС) audit",
+    "description": "Reconcile ОС register vs GL accounts 2410/2420, validate completeness, identify impairment and disposal candidates.",
+    "keywords": ["fixed asset", "fixed-asset", "FA audit", "ОС", "основные средства", "ОС аудит", "амортизация ОС"],
+    "persona": ["auditor", "accountant"],
+    "steps": [
+      { "tool": "onec_get_fixed_asset_register", "purpose": "Register snapshot with GL reconciliation" },
+      { "tool": "onec_validate_fa_completeness", "purpose": "Detect missing depreciation or register vs GL gaps" },
+      { "tool": "onec_get_impairment_indicators", "purpose": "Flag ОС past their useful life" },
+      { "tool": "onec_get_disposal_candidates", "purpose": "ОС candidates for disposal" },
+      { "tool": "onec_get_asset_location_audit", "purpose": "Inventory location mismatch with register" },
+      { "tool": "onec_get_fa_transfers", "purpose": "Inter-department / inter-org transfer history" }
+    ]
+  },
+  {
+    "id": "cash_audit",
+    "name": "Cash & bank audit",
+    "description": "Cash position snapshot, drill by account, bank reconciliation, forex exposure, cash flow analysis.",
+    "keywords": ["cash", "bank", "касса", "банк", "cash audit", "касс аудит", "bank reconciliation", "сверка с банком"],
+    "persona": ["auditor", "accountant"],
+    "steps": [
+      { "tool": "onec_get_cash_position", "purpose": "Consolidated cash + bank balance snapshot" },
+      { "tool": "onec_drill_cash_by_account", "purpose": "Per-account breakdown" },
+      { "tool": "onec_get_bank_reconciliation_detail", "purpose": "Bank statement vs GL reconciliation" },
+      { "tool": "onec_validate_cash_consistency", "purpose": "Internal consistency check" },
+      { "tool": "onec_get_forex_position", "purpose": "Foreign-currency exposure" },
+      { "tool": "onec_get_cash_flow_analysis", "purpose": "Operating / investing / financing rollup" }
+    ]
+  },
+  {
+    "id": "esf_compliance",
+    "name": "ЭСФ compliance check",
+    "description": "Standalone ЭСФ compliance: submission status, errors, and drill into missing invoices.",
+    "keywords": ["esf", "ЭСФ", "ЭСФ compliance", "ЭСФ статус", "esf status", "tax invoice compliance"],
+    "persona": ["accountant", "auditor"],
+    "steps": [
+      { "tool": "onec_get_esf_submission_status", "purpose": "Total / submitted / rejected counts" },
+      { "tool": "onec_get_esf_errors", "purpose": "Detailed rejection error messages" },
+      { "tool": "onec_validate_esf_coverage", "purpose": "Confirm taxable docs have ЭСФ" },
+      { "tool": "onec_drill_missing_esf", "purpose": "Per-document drill of gaps" }
+    ]
+  },
+  {
+    "id": "ipn_filing",
+    "name": "ИПН (income tax withholding) filing",
+    "description": "Personal income tax withholding: summary, deduction check, fund remittance.",
+    "keywords": ["ipn", "ИПН", "income tax", "withholding", "налог на доход", "ИПН отчёт"],
+    "persona": ["accountant", "hr"],
+    "steps": [
+      { "tool": "onec_get_ipn_summary", "purpose": "ИПН aggregate for the period" },
+      { "tool": "onec_validate_payroll_deductions", "purpose": "Verify withholding amounts" },
+      { "tool": "onec_get_fund_remittance_status", "purpose": "Confirm ИПН remitted to tax authority" },
+      { "tool": "onec_get_tax_filing_checklist", "purpose": "Full KZ tax-filing deadline list" }
+    ]
+  },
+  {
+    "id": "fund_remittance_check",
+    "name": "Statutory fund remittance check",
+    "description": "Verify all KZ statutory funds (ОПВ, СО, ВОСМС, ИПН) remitted on time.",
+    "keywords": ["fund remittance", "ОПВ", "СО ", "ВОСМС", "опв", "перечисление взносов", "remittance"],
+    "persona": ["accountant", "auditor"],
+    "steps": [
+      { "tool": "onec_get_fund_remittance_status", "purpose": "Current remittance status by fund" },
+      { "tool": "onec_validate_fund_remittance_timeliness", "purpose": "Flag late remittances" },
+      { "tool": "onec_get_payroll_taxes_summary", "purpose": "Cross-check with payroll taxes accrued" }
+    ]
+  },
+  {
+    "id": "ar_aging_review",
+    "name": "AR (debtor) aging review",
+    "description": "Receivables: balance, settlements, payment aging, contractor drill-down.",
+    "keywords": ["AR", "receivable", "debtor", "дебитор", "дебиторка", "AR aging", "должники"],
+    "persona": ["accountant", "controller", "auditor"],
+    "steps": [
+      { "tool": "onec_get_contractor_settlements", "purpose": "Settlements per contractor" },
+      { "tool": "onec_get_payment_aging", "purpose": "Aging buckets" },
+      { "tool": "onec_drill_unpaid_payments", "purpose": "Drill into stale receivables" },
+      { "tool": "onec_validate_advance_aging", "purpose": "Stale advances check" },
+      { "tool": "onec_generate_act_sverki", "purpose": "Reconciliation act for a contractor" }
+    ]
+  },
+  {
+    "id": "ap_aging_review",
+    "name": "AP (creditor) aging review",
+    "description": "Payables: creditor balances, aging, payment investigation.",
+    "keywords": ["AP", "payable", "creditor", "кредитор", "AP aging", "кредиторка", "поставщики"],
+    "persona": ["accountant", "controller", "auditor"],
+    "steps": [
+      { "tool": "onec_get_contractor_settlements", "purpose": "Creditor balances by contractor" },
+      { "tool": "onec_get_payment_aging", "purpose": "Aging buckets" },
+      { "tool": "onec_generate_creditors_report", "purpose": "Full creditor report" },
+      { "tool": "onec_find_duplicate_payments", "purpose": "Detect duplicate outgoing payments" },
+      { "tool": "onec_investigate_payment", "purpose": "Drill into a specific payment" }
+    ]
+  },
+  {
+    "id": "consolidation_close",
+    "name": "Multi-entity consolidation close",
+    "description": "Inter-organization transactions and elimination entries for group consolidation.",
+    "keywords": ["consolidation", "консолидация", "elimination", "межорганизационный", "group close", "консолидированный"],
+    "persona": ["controller", "cfo", "auditor"],
+    "steps": [
+      { "tool": "onec_get_inter_org_transactions", "purpose": "List inter-org transactions" },
+      { "tool": "onec_calculate_consolidation_eliminations", "purpose": "Compute elimination entries" },
+      { "tool": "onec_get_group_balance", "purpose": "Group-level balance snapshot" },
+      { "tool": "onec_get_financial_summary", "purpose": "Consolidated financial summary" }
+    ]
+  }
+]

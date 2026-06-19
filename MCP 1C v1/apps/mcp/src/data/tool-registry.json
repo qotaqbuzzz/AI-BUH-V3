@@ -1,0 +1,3496 @@
+[
+  {
+    "name": "onec_analyze_account",
+    "description": "Universal account analyser — works for ANY account code in any standard 1C database (not agro-specific). Returns five views in one call:   • summary       — opening balance, Дт/Кт turnover, closing balance for the period   • byCorrAccount — breakdown by corresponding account (корреспондирующий счёт) with % share and document types;                     shows cost routes (e.g. 8112←1310 materials, 8112←3350 payroll, 8112←8412 overhead)   • bySubconto    — closing balance split by subconto (ExtDimension1/2) with auto-resolved names   • monthlyTrend  — Дт/Кт turnover and closing balance per calendar month   • risks[]       — detected accounting errors / risks based on corr-account correspondences.                     Each risk has: severity (warn/error/critical), ruleId, corrAccount, message (RU), suggestedFix (1C steps).                     IMPORTANT: if risks[] is non-empty, you MUST show every item to the user with                     severity flag (🔴 critical, 🟠 error, 🟡 warn) and suggestedFix. Never ignore risks[].                     Examples detected: tax accounts (31xx) posted directly to equity (EQ-002);                     dividends via payroll document (EQ-001a); dividends in a loss year (EQ-001b);                     payroll/contribution accounts (32xx) posted to equity (EQ-003). Use this instead of onec_get_account_card when that tool returns empty rows (known 1C OData limitation with OR-filter on RecordType).",
+    "shortDescription": "Universal account analyser — works for ANY account code in any standard 1C database (not agro-specific).",
+    "domain": "account-analysis",
+    "verb": "analyze",
+    "keywords": [
+      "payroll",
+      "inventory",
+      "customs",
+      "drill"
+    ],
+    "glAccounts": [
+      "8112",
+      "1310",
+      "3350",
+      "8412"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_account_card"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "kz_chart_list_sections",
+    "description": "List all 8 top-level sections of the Kazakhstan standard chart of accounts (Типовой план счетов РК). Returns section codes (1–8), names in Russian, descriptions, and subsection count.",
+    "shortDescription": "List all 8 top-level sections of the Kazakhstan standard chart of accounts (Типовой план счетов РК).",
+    "domain": "accounts",
+    "verb": "chart",
+    "keywords": [
+      "budget"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "kz_chart_get_section",
+    "description": "Get a top-level section of the KZ chart of accounts with its subsections list. Codes: 1=Short-term assets, 2=Long-term assets, 3=Short-term liabilities, 4=Long-term liabilities, 5=Capital, 6=Income, 7=Expenses, 8=Production.",
+    "shortDescription": "Get a top-level section of the KZ chart of accounts with its subsections list.",
+    "domain": "accounts",
+    "verb": "chart",
+    "keywords": [
+      "revenue",
+      "expense"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "kz_chart_get_subsection",
+    "description": "Get a subsection of the KZ chart of accounts with all its account groups (4-digit codes with names and descriptions). Examples: '1000'=Cash, '1200'=Short-term receivables, '2400'=Fixed assets, '3300'=Short-term payables, '6000'=Revenue.",
+    "shortDescription": "Get a subsection of the KZ chart of accounts with all its account groups (4-digit codes with names and descriptions).",
+    "domain": "accounts",
+    "verb": "chart",
+    "keywords": [
+      "cash",
+      "fa",
+      "ar",
+      "ap",
+      "revenue"
+    ],
+    "glAccounts": [
+      "1000",
+      "1200",
+      "2400",
+      "3300",
+      "6000"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "kz_chart_lookup",
+    "description": "Look up any account code in the KZ standard chart of accounts and get full details with breadcrumb path. Works at all three levels: section ('1'), subsection ('1000'), or account group ('1010'). Use this to understand what a specific 1C account code means.",
+    "shortDescription": "Look up any account code in the KZ standard chart of accounts and get full details with breadcrumb path.",
+    "domain": "accounts",
+    "verb": "chart",
+    "keywords": [
+      "cash"
+    ],
+    "glAccounts": [
+      "1000",
+      "1010"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "kz_chart_search",
+    "description": "Full-text search across all account names and descriptions in the Kazakhstan standard chart of accounts. Search in Russian (e.g. 'аренд', 'дебиторская', 'запасы', 'налог'). Returns matches at section, subsection, and group level with breadcrumbs.",
+    "shortDescription": "Full-text search across all account names and descriptions in the Kazakhstan standard chart of accounts.",
+    "domain": "accounts",
+    "verb": "chart",
+    "keywords": [
+      "ar",
+      "inventory"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_monthly_trend",
+    "description": "Get monthly P&L trend: revenue (6010), COGS (7010), overhead (7210), gross profit, and operating profit broken down by month. Essential for seasonal agricultural analysis — shows planting vs harvest income pattern. Returns one row per month plus totals.",
+    "shortDescription": "Get monthly P&L trend: revenue (6010), COGS (7010), overhead (7210), gross profit, and operating profit broken down by month.",
+    "domain": "analytics",
+    "verb": "get",
+    "keywords": [
+      "cogs",
+      "revenue",
+      "expense"
+    ],
+    "glAccounts": [
+      "6010",
+      "7010",
+      "7210"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_financial_summary",
+    "description": "Get a complete financial snapshot for an organization: cash (1010+1030), AR (1210), AP (3310), VAT liability (3130-1420), КПН (3110). Parallel account balance fetch.",
+    "shortDescription": "Get a complete financial snapshot for an organization: cash (1010+1030), AR (1210), AP (3310), VAT liability (3130-1420), КПН (3110).",
+    "domain": "analytics",
+    "verb": "get",
+    "keywords": [
+      "cash",
+      "bank",
+      "vat",
+      "kpn",
+      "ar",
+      "ap"
+    ],
+    "glAccounts": [
+      "1010",
+      "1030",
+      "1210",
+      "3310",
+      "3130",
+      "1420",
+      "3110"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_ml_scan_anomalies",
+    "description": "AI anomaly scan with z-score outlier detection and confidence scoring.  Returns anomalies ranked by severity and confidence.  Optionally sends Telegram/webhook alerts for critical findings.",
+    "shortDescription": "AI anomaly scan with z-score outlier detection and confidence scoring.",
+    "domain": "anomaly-ml",
+    "verb": "ml",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_build_baselines",
+    "description": "Scan 12+ months of historical transactions and compute statistical baselines  (mean, std dev, p95, p99) per document type and calendar month.  Run this once, then pass the result to onec_ml_scan_anomalies for outlier detection.",
+    "shortDescription": "Scan 12+ months of historical transactions and compute statistical baselines  (mean, std dev, p95, p99) per document type and calendar month.",
+    "domain": "anomaly-ml",
+    "verb": "build",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_ml_scan_anomalies"
+    ],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_answer",
+    "description": "PRIMARY ENTRY POINT — call this first for any accounting question before falling back to primitives. Accepts a natural-language question in Russian or English, routes it to the right 1C data source, and returns a structured answer with a provenance trail (which tools were called, which OData entity, row counts, timing) and suggested follow-up questions. Canonical patterns handled: receivables (дебиторы), payables (кредиторы). If the answer contains 'unknown intent', fall back to onec_find_tool to discover the right primitive.",
+    "shortDescription": "PRIMARY ENTRY POINT — call this first for any accounting question before falling back to primitives.",
+    "domain": "answer",
+    "verb": "answer",
+    "keywords": [
+      "ar",
+      "ap",
+      "schema"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_find_tool"
+    ],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_fa_transfers",
+    "description": "Returns all fixed asset (ОС) inter-department and inter-organization transfer documents (Document_ПередачаОС) in the given period. Each record shows: documentNumber, documentDate, assetGuid, fromDepartment, toDepartment, fromOrgGuid, toOrgGuid, amount. Use to audit asset movements, detect unauthorized transfers, or reconcile asset location registers. Returns: transfers[], totalTransferred KZT, period. Drill: call onec_get_asset_location_audit to compare registered vs. actual locations for all assets.",
+    "shortDescription": "Returns all fixed asset (ОС) inter-department and inter-organization transfer documents (Document_ПередачаОС) in the given period.",
+    "domain": "asset-transfer",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "audit",
+      "drill",
+      "asset_transfer",
+      "cost_center"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Document_ПередачаОС"
+    ],
+    "drillsTo": [
+      "onec_get_asset_location_audit"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_nma_transfers",
+    "description": "Returns all intangible asset (НМА) transfer documents (Document_ПередачаНМА) in the given period. Each record shows: documentNumber, documentDate, assetGuid (НМА Ref_Key), fromOrgGuid, amount. Use to audit NMA disposals and transfers to external parties. Returns: transfers[], totalTransferred KZT, period. Drill: call onec_get_nma_register to see the current NMA register after transfers.",
+    "shortDescription": "Returns all intangible asset (НМА) transfer documents (Document_ПередачаНМА) in the given period.",
+    "domain": "asset-transfer",
+    "verb": "get",
+    "keywords": [
+      "nma",
+      "audit",
+      "drill",
+      "asset_transfer"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Document_ПередачаНМА"
+    ],
+    "drillsTo": [
+      "onec_get_nma_register"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_audit_period_quality",
+    "description": "Run a full quality audit of accounting work for a given month. Checks 5 blocks: (1) Completeness — unposted docs, salary accrual, month close; (2) Errors — manual entries (ОперацияБух), red storno, round amounts, night-time entries; (3) Balance correctness — Дт=Кт, atypical account signs, WIP seasonal check, bank balance; (4) Tax discipline — VAT vs revenue, payroll taxes, КПН (December); (5) Dynamics — revenue change vs prior period, manual entry growth. Returns structured ✅/⚠️/❌ report.",
+    "shortDescription": "Run a full quality audit of accounting work for a given month.",
+    "domain": "auditor",
+    "verb": "audit",
+    "keywords": [
+      "bank",
+      "vat",
+      "kpn",
+      "payroll",
+      "revenue",
+      "audit",
+      "close",
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "hr",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_document_journal_entries",
+    "description": "Get all accounting entries (проводки Дт/Кт) created by a document in AccountingRegister_Типовой. Use to verify correctness of postings.",
+    "shortDescription": "Get all accounting entries (проводки Дт/Кт) created by a document in AccountingRegister_Типовой.",
+    "domain": "auditor",
+    "verb": "get",
+    "keywords": [
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "AccountingRegister_Типовой"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_verify_account_balance",
+    "description": "Verify account balance integrity: get both balance and turnovers for an account code to check consistency.",
+    "shortDescription": "Verify account balance integrity: get both balance and turnovers for an account code to check consistency.",
+    "domain": "auditor",
+    "verb": "verify",
+    "keywords": [
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_esf_status",
+    "description": "Check ЭСФ (electronic invoice) registration status for a period from InformationRegister_АктуальныеЭСФ. Confirms mandatory Kazakhstan e-invoicing compliance.",
+    "shortDescription": "Check ЭСФ (electronic invoice) registration status for a period from InformationRegister_АктуальныеЭСФ.",
+    "domain": "auditor",
+    "verb": "get",
+    "keywords": [
+      "vat",
+      "esf",
+      "audit",
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "InformationRegister_АктуальныеЭСФ"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_unposted_documents",
+    "description": "Find documents that are not posted (Posted = false) — incomplete/draft documents that may affect period reporting.",
+    "shortDescription": "Find documents that are not posted (Posted = false) — incomplete/draft documents that may affect period reporting.",
+    "domain": "auditor",
+    "verb": "get",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_month_close_status",
+    "description": "Check if month-closing document (ЗакрытиеМесяца) exists and is posted for a given organization and period.",
+    "shortDescription": "Check if month-closing document (ЗакрытиеМесяца) exists and is posted for a given organization and period.",
+    "domain": "auditor",
+    "verb": "get",
+    "keywords": [
+      "close",
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_budget_vs_actual",
+    "description": "Compares actual GL turnovers (accounts 6010 revenue, 7010 COGS, 7210 opex) against budget data from InformationRegister_БюджетныеПоказатели. If no budget data is found in 1C, returns actuals with zero budgets and a dataSource note advising to create budget registers. Variance = budget − actual. Drill: call onec_analyze_variance_drivers to rank the largest variance contributors.",
+    "shortDescription": "Compares actual GL turnovers (accounts 6010 revenue, 7010 COGS, 7210 opex) against budget data from InformationRegister_БюджетныеПоказатели.",
+    "domain": "budget",
+    "verb": "get",
+    "keywords": [
+      "cogs",
+      "revenue",
+      "expense",
+      "budget",
+      "drill"
+    ],
+    "glAccounts": [
+      "6010",
+      "7010",
+      "7210"
+    ],
+    "entities": [
+      "InformationRegister_БюджетныеПоказатели"
+    ],
+    "drillsTo": [
+      "onec_analyze_variance_drivers"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_forecast_year_end",
+    "description": "Projects full-year revenue, expenses, and net income by extrapolating YTD actuals (revenue from account 6010, costs from 7010+7210) using a straight-line monthly factor (12 / monthsElapsed). Returns projected year-end P&L and months remaining. Use for board reporting and covenant compliance checks. Drill: call onec_get_budget_vs_actual to compare projection against budget.",
+    "shortDescription": "Projects full-year revenue, expenses, and net income by extrapolating YTD actuals (revenue from account 6010, costs from 7010+7210) using a straight-line monthly factor (12 / monthsElapsed).",
+    "domain": "budget",
+    "verb": "forecast",
+    "keywords": [
+      "cogs",
+      "revenue",
+      "expense",
+      "budget",
+      "audit",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [
+      "6010",
+      "7010",
+      "7210"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_budget_vs_actual"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_analyze_variance_drivers",
+    "description": "Ranks P&L accounts by absolute variance (budget vs actual) and computes each account's contribution to total variance as a percentage. The top drivers typically explain >80% of variance. Use to focus management attention on the most material line items. Drill: for the top driver account, call onec_get_account_card to inspect individual transactions.",
+    "shortDescription": "Ranks P&L accounts by absolute variance (budget vs actual) and computes each account's contribution to total variance as a percentage.",
+    "domain": "budget",
+    "verb": "analyze",
+    "keywords": [
+      "budget",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_account_card"
+    ],
+    "persona": [
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_cash_position",
+    "description": "Returns consolidated cash and bank balances from GL accounts 1010 (cash), 1020 (cash in transit), and 1030 (bank accounts) as of a given date. Includes per-account breakdown and total KZT. This is the primary tool for 'what's our cash position?' queries. Drill: call onec_drill_cash_by_account for movement detail, or onec_get_forex_position for multi-currency breakdown.",
+    "shortDescription": "Returns consolidated cash and bank balances from GL accounts 1010 (cash), 1020 (cash in transit), and 1030 (bank accounts) as of a given date.",
+    "domain": "cash",
+    "verb": "get",
+    "keywords": [
+      "cash",
+      "bank",
+      "forex",
+      "consolidation",
+      "drill"
+    ],
+    "glAccounts": [
+      "1010",
+      "1020",
+      "1030"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_drill_cash_by_account",
+      "onec_get_forex_position"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller"
+    ]
+  },
+  {
+    "name": "onec_drill_cash_by_account",
+    "description": "Drills into a specific cash account (1010, 1020, or 1030) and returns the full account card with individual debit/credit postings for the period. Use after onec_get_cash_position to trace specific movements. Drill: call onec_get_document(recorderKey) on any row to see the source payment document.",
+    "shortDescription": "Drills into a specific cash account (1010, 1020, or 1030) and returns the full account card with individual debit/credit postings for the period.",
+    "domain": "cash",
+    "verb": "drill",
+    "keywords": [
+      "cash",
+      "bank",
+      "drill"
+    ],
+    "glAccounts": [
+      "1010",
+      "1020",
+      "1030"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_cash_position",
+      "onec_get_document"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_bank_reconciliation_detail",
+    "description": "Returns GL balance for a bank account and reconciliation status. Compares GL balance against bank statement balance and identifies outstanding items. A reconciled: false result indicates unposted transactions. Drill: call onec_drill_cash_by_account for the unreconciled period to find outstanding items.",
+    "shortDescription": "Returns GL balance for a bank account and reconciliation status.",
+    "domain": "cash",
+    "verb": "get",
+    "keywords": [
+      "cash",
+      "bank",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_drill_cash_by_account"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_cash_flow_analysis",
+    "description": "Returns operating cash inflows and outflows for a period by summing debit and credit turnovers on accounts 1010 and 1030. Shows net cash flow (inflows − outflows). Use for period-over-period cash trend analysis. Drill: call onec_drill_cash_by_account to break down by individual transactions.",
+    "shortDescription": "Returns operating cash inflows and outflows for a period by summing debit and credit turnovers on accounts 1010 and 1030.",
+    "domain": "cash",
+    "verb": "get",
+    "keywords": [
+      "cash",
+      "bank",
+      "drill"
+    ],
+    "glAccounts": [
+      "1010",
+      "1030"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_drill_cash_by_account"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_payment_aging",
+    "description": "Buckets outgoing payment documents (Document_ПлатежноеПоручениеИсходящее) by age: 0-30, 31-60, 61-90, and 90+ days. Returns count and total amount per bucket. Use to identify overdue payment obligations. Drill: call onec_drill_cash_by_account('1030', ...) for the overdue bucket dates to trace specific payments.",
+    "shortDescription": "Buckets outgoing payment documents (Document_ПлатежноеПоручениеИсходящее) by age: 0-30, 31-60, 61-90, and 90+ days.",
+    "domain": "cash",
+    "verb": "get",
+    "keywords": [
+      "cash",
+      "bank",
+      "drill"
+    ],
+    "glAccounts": [
+      "1030"
+    ],
+    "entities": [
+      "Document_ПлатежноеПоручениеИсходящее"
+    ],
+    "drillsTo": [
+      "onec_drill_cash_by_account"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_analyze_cash_variance",
+    "description": "Computes mean and standard deviation of cash flows for the period and flags statistical outliers (>2σ deviation). Use to detect unusual cash movements that warrant investigation. Drill: for flagged outlier dates, call onec_drill_cash_by_account to inspect individual transactions.",
+    "shortDescription": "Computes mean and standard deviation of cash flows for the period and flags statistical outliers (>2σ deviation).",
+    "domain": "cash",
+    "verb": "analyze",
+    "keywords": [
+      "cash",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_drill_cash_by_account"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_forex_position",
+    "description": "Returns available exchange rates from InformationRegister_КурсыВалют as of the given date. Use to assess foreign currency exposure. Drill: for each non-KZT currency, call onec_drill_cash_by_account on the corresponding FCY bank account to see FCY-denominated movements.",
+    "shortDescription": "Returns available exchange rates from InformationRegister_КурсыВалют as of the given date.",
+    "domain": "cash",
+    "verb": "get",
+    "keywords": [
+      "cash",
+      "bank",
+      "forex",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "InformationRegister_КурсыВалют"
+    ],
+    "drillsTo": [
+      "onec_drill_cash_by_account"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_validate_cash_consistency",
+    "description": "Checks that no cash account (1010, 1030) has a credit balance, which would indicate a data entry error or unposted reversal. Returns passed flag and list of issues. Run at period-end close before generating financial statements. Drill: for each failing account, call onec_drill_cash_by_account to identify the erroneous posting.",
+    "shortDescription": "Checks that no cash account (1010, 1030) has a credit balance, which would indicate a data entry error or unposted reversal.",
+    "domain": "cash",
+    "verb": "validate",
+    "keywords": [
+      "cash",
+      "bank",
+      "close",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [
+      "1010",
+      "1030"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_drill_cash_by_account"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_search_contractors",
+    "description": "Search 1C counterparties (Контрагенты) by name, РНН, or IIC. Returns up to 'limit' matches.",
+    "shortDescription": "Search 1C counterparties (Контрагенты) by name, РНН, or IIC.",
+    "domain": "catalog",
+    "verb": "search",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_contractor",
+    "description": "Get full counterparty details by GUID, including main contract and bank account.",
+    "shortDescription": "Get full counterparty details by GUID, including main contract and bank account.",
+    "domain": "catalog",
+    "verb": "get",
+    "keywords": [
+      "bank"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_search_nomenclature",
+    "description": "Search 1C nomenclature (products/services) by name or article (Артикул).",
+    "shortDescription": "Search 1C nomenclature (products/services) by name or article (Артикул).",
+    "domain": "catalog",
+    "verb": "search",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_warehouses",
+    "description": "List all warehouses (Catalog_Склады) in the 1C database. Returns GUID, name, and code. Use to get warehouse GUIDs for stock and movement queries.",
+    "shortDescription": "List all warehouses (Catalog_Склады) in the 1C database.",
+    "domain": "catalog",
+    "verb": "get",
+    "keywords": [
+      "inventory"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Catalog_Склады"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_contractor_contracts",
+    "description": "List all contracts (Catalog_ДоговорыКонтрагентов) for a contractor. Returns contract name, type (ВидДоговора), currency, amount, and dates. Use to understand payment terms and contract structure before analyzing settlements.",
+    "shortDescription": "List all contracts (Catalog_ДоговорыКонтрагентов) for a contractor.",
+    "domain": "catalog",
+    "verb": "get",
+    "keywords": [
+      "forex"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Catalog_ДоговорыКонтрагентов"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_organizations",
+    "description": "List all organizations (Организации) in the 1C database with BIN (ИдентификационныйНомер) and РНН.",
+    "shortDescription": "List all organizations (Организации) in the 1C database with BIN (ИдентификационныйНомер) and РНН.",
+    "domain": "catalog",
+    "verb": "get",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_inter_org_transactions",
+    "description": "Identifies inter-company sales transactions between organizations in the same group. Filters Document_РеализацияТоваровУслуг where both the selling organization and the buyer (Контрагент) are in the provided orgGuids list. Returns all cross-entity transactions for the period. Drill: call onec_calculate_consolidation_eliminations to compute the required eliminating entries.",
+    "shortDescription": "Identifies inter-company sales transactions between organizations in the same group.",
+    "domain": "consolidation",
+    "verb": "get",
+    "keywords": [
+      "inventory",
+      "revenue",
+      "consolidation",
+      "drill",
+      "schema"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Document_РеализацияТоваровУслуг"
+    ],
+    "drillsTo": [
+      "onec_calculate_consolidation_eliminations"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_calculate_consolidation_eliminations",
+    "description": "Calculates the journal entries required to eliminate inter-company revenue and COGS from a consolidated P&L. For each inter-company sale identified by onec_get_inter_org_transactions, returns the elimination entry (Debit 6010 / Credit 7010). A balanced: true result confirms eliminations net to zero. Drill: validate individual inter-company amounts using onec_get_inter_org_transactions.",
+    "shortDescription": "Calculates the journal entries required to eliminate inter-company revenue and COGS from a consolidated P&L.",
+    "domain": "consolidation",
+    "verb": "calculate",
+    "keywords": [
+      "cogs",
+      "revenue",
+      "consolidation",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [
+      "6010",
+      "7010"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_inter_org_transactions"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_cost_center_summary",
+    "description": "Returns expenses by cost center (Catalog_ПодразделенияОрганизаций) for the period, split between direct costs (70%) and allocated overhead (30%). Total expenses are sourced from GL account 7210 turnovers distributed equally across departments. Use for management accounting and responsibility reporting. Drill: call onec_analyze_overhead_allocation for a detailed overhead driver analysis.",
+    "shortDescription": "Returns expenses by cost center (Catalog_ПодразделенияОрганизаций) for the period, split between direct costs (70%) and allocated overhead (30%).",
+    "domain": "cost-center",
+    "verb": "get",
+    "keywords": [
+      "expense",
+      "drill",
+      "cost_center"
+    ],
+    "glAccounts": [
+      "7210"
+    ],
+    "entities": [
+      "Catalog_ПодразделенияОрганизаций"
+    ],
+    "drillsTo": [
+      "onec_analyze_overhead_allocation"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_analyze_overhead_allocation",
+    "description": "Computes overhead allocation from GL account 8410 (общепроизводственные расходы) across cost centers using equal-split method. Returns total overhead, allocation amounts per department, and percentage share. The allocationMethod field identifies the basis used. Drill: to implement driver-based allocation, call onec_get_cost_center_summary with direct-cost weights.",
+    "shortDescription": "Computes overhead allocation from GL account 8410 (общепроизводственные расходы) across cost centers using equal-split method.",
+    "domain": "cost-center",
+    "verb": "analyze",
+    "keywords": [
+      "expense",
+      "drill",
+      "cost_center"
+    ],
+    "glAccounts": [
+      "8410"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_cost_center_summary"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_departmental_profitability",
+    "description": "Returns contribution margin analysis per department: revenue (account 6010 split equally), direct costs, allocated overhead, net contribution, and margin percent. Negative-margin departments are loss centers requiring management attention. Drill: for any loss center, call onec_get_cost_center_summary to decompose expenses, then onec_analyze_overhead_allocation to challenge the allocation method.",
+    "shortDescription": "Returns contribution margin analysis per department: revenue (account 6010 split equally), direct costs, allocated overhead, net contribution, and margin percent.",
+    "domain": "cost-center",
+    "verb": "get",
+    "keywords": [
+      "revenue",
+      "expense",
+      "drill",
+      "cost_center"
+    ],
+    "glAccounts": [
+      "6010"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_cost_center_summary",
+      "onec_analyze_overhead_allocation"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_nomenclature_unit_cost",
+    "description": "Returns per-nomenclature unit cost for a period: (1) production unit cost = Дт 1320 / qty capitalised at harvest; (2) COGS unit cost = Дт 7010 / qty sold; (3) opening/closing inventory with weighted-average. Use onec_search_nomenclature first to get nomenclatureGuid (e.g. search 'пшеница'). Typical question: 'себестоимость 1 тонны пшеницы 2025 года'. See kz-agro-costing-flow.md.",
+    "shortDescription": "Returns per-nomenclature unit cost for a period: (1) production unit cost = Дт 1320 / qty capitalised at harvest; (2) COGS unit cost = Дт 7010 / qty sold; (3) opening/closing inventory with weighte...",
+    "domain": "costing",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "inventory",
+      "cogs"
+    ],
+    "glAccounts": [
+      "1320",
+      "7010",
+      "2025"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_search_nomenclature"
+    ],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_cogs_composition",
+    "description": "Shows what production costs flow into COGS: groups account 8110/8112 Дт turnover by corr-account (1310 materials, 3350 payroll, 3211/3213/3250 employer charges, 2420 depreciation, 8412 overhead). Returns % breakdown and sample source documents per category. Answers 'из чего состоит себестоимость'. See kz-agro-costing-flow.md.",
+    "shortDescription": "Shows what production costs flow into COGS: groups account 8110/8112 Дт turnover by corr-account (1310 materials, 3350 payroll, 3211/3213/3250 employer charges, 2420 depreciation, 8412 overhead).",
+    "domain": "costing",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "payroll",
+      "inventory",
+      "cogs",
+      "expense",
+      "drill"
+    ],
+    "glAccounts": [
+      "8110",
+      "8112",
+      "1310",
+      "3350",
+      "3211",
+      "3213",
+      "3250",
+      "2420",
+      "8412"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "hr",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_real_production_costs",
+    "description": "Returns TRUE production cost excluding НЗП ping-pong inflation. Each month 1C closes the production account (8112) to WIP (1341) and re-opens it next month — this inflates raw Дт turnover 4–5×. This tool filters those inter-account transfers and returns: (1) real new costs by cost item (Catalog_СтатьиЗатрат); (2) harvest capitalized by product group (Кт to 1320); (3) cross-check: realCosts − harvest = WIP net increase. Account codes are configurable for non-agro (e.g. 2010/2110/4300 Russian chart). Typical question: 'реальная себестоимость производства по статьям затрат'.",
+    "shortDescription": "Returns TRUE production cost excluding НЗП ping-pong inflation.",
+    "domain": "costing",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "inventory",
+      "cogs",
+      "expense",
+      "close",
+      "validate",
+      "asset_transfer"
+    ],
+    "glAccounts": [
+      "8112",
+      "1341",
+      "1320",
+      "2010",
+      "2110",
+      "4300"
+    ],
+    "entities": [
+      "Catalog_СтатьиЗатрат"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_import_summary",
+    "description": "Returns all import declarations (Document_ГТДИмпорт) for the period with customs value, duty amount (actual or 5% estimate), VAT, and total landed cost. Aggregates to totals. Use for customs cost analysis and trade finance. Drill: call onec_calculate_landed_cost for a specific shipment to recompute with actual HS code tariff rates.",
+    "shortDescription": "Returns all import declarations (Document_ГТДИмпорт) for the period with customs value, duty amount (actual or 5% estimate), VAT, and total landed cost.",
+    "domain": "customs",
+    "verb": "get",
+    "keywords": [
+      "vat",
+      "customs",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Document_ГТДИмпорт"
+    ],
+    "drillsTo": [
+      "onec_calculate_landed_cost"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_calculate_landed_cost",
+    "description": "Calculates total landed cost for an import shipment: CIF (goods + freight + insurance) → duty (HS code tariff rate) → VAT (12% on CIF+duty) → total landed cost. Returns full cost breakdown with percentages and optional cost-per-unit. Supported HS code prefixes: 8471, 8517 (0%), 8701-8703 (5%); all others default to 5% per КЗ tariff schedule. Use before booking inventory to ensure accurate cost capitalization.",
+    "shortDescription": "Calculates total landed cost for an import shipment: CIF (goods + freight + insurance) → duty (HS code tariff rate) → VAT (12% on CIF+duty) → total landed cost.",
+    "domain": "customs",
+    "verb": "calculate",
+    "keywords": [
+      "vat",
+      "inventory",
+      "customs",
+      "drill"
+    ],
+    "glAccounts": [
+      "8471",
+      "8517",
+      "8701",
+      "8703"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_docflow_status",
+    "description": "Check if 1С:Документооборот integration is configured. Returns configuration status and setup instructions.",
+    "shortDescription": "Check if 1С:Документооборот integration is configured.",
+    "domain": "docflow",
+    "verb": "docflow",
+    "keywords": [
+      "validate",
+      "setup"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_docflow_get_tasks",
+    "description": "Get tasks/assignments from 1С:Документооборот. Filter by assignee, status, or date range. Returns list of tasks with subject, status, due date, and linked document.",
+    "shortDescription": "Get tasks/assignments from 1С:Документооборот.",
+    "domain": "docflow",
+    "verb": "docflow",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_docflow_get_overdue",
+    "description": "Get all overdue tasks from 1С:Документооборот. Returns tasks past their due date that have not been completed.",
+    "shortDescription": "Get all overdue tasks from 1С:Документооборот.",
+    "domain": "docflow",
+    "verb": "docflow",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_docflow_create_task",
+    "description": "Create a new task/assignment in 1С:Документооборот. Use for: approval requests, payment authorizations, document sign-off, audit follow-ups.",
+    "shortDescription": "Create a new task/assignment in 1С:Документооборот.",
+    "domain": "docflow",
+    "verb": "docflow",
+    "keywords": [
+      "audit"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_docflow_complete_task",
+    "description": "Complete (accept or reject) a task in 1С:Документооборот. Used for approving payments, signing documents, or rejecting requests with a reason.",
+    "shortDescription": "Complete (accept or reject) a task in 1С:Документооборот.",
+    "domain": "docflow",
+    "verb": "docflow",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_docflow_get_documents",
+    "description": "Search documents in 1С:Документооборот by contractor, type, status, or date range.",
+    "shortDescription": "Search documents in 1С:Документооборот by contractor, type, status, or date range.",
+    "domain": "docflow",
+    "verb": "docflow",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_docflow_get_document",
+    "description": "Get a single document from 1С:Документооборот by GUID, including full details and approval status.",
+    "shortDescription": "Get a single document from 1С:Документооборот by GUID, including full details and approval status.",
+    "domain": "docflow",
+    "verb": "docflow",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_docflow_create_document",
+    "description": "Create a new document in 1С:Документооборот and optionally send it for approval. Use for: registering incoming/outgoing documents, creating internal orders, filing contracts.",
+    "shortDescription": "Create a new document in 1С:Документооборот and optionally send it for approval.",
+    "domain": "docflow",
+    "verb": "docflow",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_docflow_get_approval_route",
+    "description": "Get the current approval route and status for a document in 1С:Документооборот. Shows all tasks in the approval chain and who is blocking.",
+    "shortDescription": "Get the current approval route and status for a document in 1С:Документооборот.",
+    "domain": "docflow",
+    "verb": "docflow",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_docflow_search_by_contractor",
+    "description": "Find all documents in 1С:Документооборот linked to a specific contractor name.",
+    "shortDescription": "Find all documents in 1С:Документооборот linked to a specific contractor name.",
+    "domain": "docflow",
+    "verb": "docflow",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_search_documents",
+    "description": "Search 1C documents by type, date range, contractor GUID, and posted status.",
+    "shortDescription": "Search 1C documents by type, date range, contractor GUID, and posted status.",
+    "domain": "document",
+    "verb": "search",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_document",
+    "description": "Get a full 1C document with all tabular sections (Товары, Услуги, РасшифровкаПлатежа) by GUID.",
+    "shortDescription": "Get a full 1C document with all tabular sections (Товары, Услуги, РасшифровкаПлатежа) by GUID.",
+    "domain": "document",
+    "verb": "get",
+    "keywords": [
+      "inventory"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_create_document",
+    "description": "Create any 1C object (catalog element or document header) by passing the entity set name and field values. Does NOT post the document.",
+    "shortDescription": "Create any 1C object (catalog element or document header) by passing the entity set name and field values.",
+    "domain": "document",
+    "verb": "create",
+    "keywords": [
+      "schema"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_post_document",
+    "description": "Post (провести) or unpost a 1C document. Posting creates accounting entries in AccountingRegister_Типовой.",
+    "shortDescription": "Post (провести) or unpost a 1C document.",
+    "domain": "document",
+    "verb": "post",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [
+      "AccountingRegister_Типовой"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_advance_settlement",
+    "description": "For a contractor who has paid advances (account 3510 / 3387), shows: total advance received (Кт turnover), total offset against deliveries (Дт turnover), remaining outstanding balance, and fulfillment %. Essential for investigating unreconciled advance positions — e.g. checking how much of an advance-buyer's prepayments have been fulfilled by actual shipments.",
+    "shortDescription": "For a contractor who has paid advances (account 3510 / 3387), shows: total advance received (Кт turnover), total offset against deliveries (Дт turnover), remaining outstanding balance, and fulfillm...",
+    "domain": "duediligence",
+    "verb": "get",
+    "keywords": [
+      "validate"
+    ],
+    "glAccounts": [
+      "3510",
+      "3387"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_sales_with_lines",
+    "description": "Get Реализации (sales invoices) for one or more contractors with FULL line detail: nomenclature name, quantity, unit, price, amount, VAT. Accepts multiple contractor GUIDs to query an entire corporate group at once. Returns rows per document, plus a byNomenclature aggregate (total tonnes/units and amounts per product). Use to answer: 'What goods and how many tonnes were shipped to the SSA/ANCILE group?'",
+    "shortDescription": "Get Реализации (sales invoices) for one or more contractors with FULL line detail: nomenclature name, quantity, unit, price, amount, VAT.",
+    "domain": "duediligence",
+    "verb": "get",
+    "keywords": [
+      "vat",
+      "revenue"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_group_balance",
+    "description": "Consolidated balance across ALL accounting accounts for a group of related contractors (e.g. the full SSA / ANCILE ecosystem). Aggregates ExtDimension rows for every member GUID into a single account-by-account view. Use to answer: 'What is our total net position with the entire SSA group across all accounts?'",
+    "shortDescription": "Consolidated balance across ALL accounting accounts for a group of related contractors (e.g.",
+    "domain": "duediligence",
+    "verb": "get",
+    "keywords": [
+      "consolidation"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor",
+      "controller"
+    ]
+  },
+  {
+    "name": "onec_entity_schema_status",
+    "description": "Reports that the entity schema index is unavailable (Entities/ folder not found or not configured). Set the ENTITIES_DIR environment variable to the absolute path of the Entities/ folder.",
+    "shortDescription": "Reports that the entity schema index is unavailable (Entities/ folder not found or not configured).",
+    "domain": "entity-schema",
+    "verb": "entity",
+    "keywords": [
+      "schema"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_entity_schema",
+    "description": "Look up the complete OData schema for any 1C entity: all field names, Edm types, nullable flags, and foreign-key relationships. Use this BEFORE building onec_create_document, onec_search_documents, or any raw OData call to confirm exact Cyrillic field names. Examples: 'Document_АвансовыйОтчет' (42 fields), 'Catalog_Контрагенты' (~30 fields), 'AccumulationRegister_ТоварыОрганизацийБУ'. If you only know part of the name, call onec_search_entities first.",
+    "shortDescription": "Look up the complete OData schema for any 1C entity: all field names, Edm types, nullable flags, and foreign-key relationships.",
+    "domain": "entity-schema",
+    "verb": "get",
+    "keywords": [
+      "inventory",
+      "schema"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Document_АвансовыйОтчет",
+      "Catalog_Контрагенты",
+      "AccumulationRegister_ТоварыОрганизацийБУ"
+    ],
+    "drillsTo": [
+      "onec_create_document",
+      "onec_search_documents",
+      "onec_search_entities"
+    ],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_search_entities",
+    "description": "Find 1C OData entities by name fragment. Use when you know part of the entity name or want to browse a category. Returns entity name, category, and property/relation counts — no field details (call onec_get_entity_schema for that). Examples: query='Поступление' category='Document' → finds Document_ПоступлениеТоваровУслуг and related docs.           query='Склад' → finds Catalog_Склады and any entity with Склад in its name.           category='AccumulationRegister' → lists all accumulation registers.",
+    "shortDescription": "Find 1C OData entities by name fragment.",
+    "domain": "entity-schema",
+    "verb": "search",
+    "keywords": [
+      "fa",
+      "inventory",
+      "schema"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Document_ПоступлениеТоваровУслуг",
+      "Catalog_Склады"
+    ],
+    "drillsTo": [
+      "onec_get_entity_schema"
+    ],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_find_field",
+    "description": "Find all 1C OData entities that contain a field matching the given name (case-insensitive substring match). Use to answer: 'Which entity owns the field НазначениеПлатежа?' or 'Which documents have a СуммаДокумента field?' Also useful for discovering the correct spelling of Cyrillic field names before writing OData $filter or $select clauses. Returns entity name, category, and the matching property's type and nullable flag.",
+    "shortDescription": "Find all 1C OData entities that contain a field matching the given name (case-insensitive substring match).",
+    "domain": "entity-schema",
+    "verb": "find",
+    "keywords": [
+      "schema"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_entity_relations",
+    "description": "Get the full relationship graph for a 1C entity: both outbound foreign keys (fields this entity holds pointing to other entities) and inbound references (other entities that hold a foreign key pointing to this one). Use to build $expand chains: e.g. find that Document_АвансовыйОтчет has an outbound relation to Catalog_Валюты via ВалютаДокумента, so you can add '$expand=ВалютаДокумента' to an OData query. Also shows which Documents reference a given Catalog (inbound), useful for understanding data dependencies.",
+    "shortDescription": "Get the full relationship graph for a 1C entity: both outbound foreign keys (fields this entity holds pointing to other entities) and inbound references (other entities that hold a foreign key poin...",
+    "domain": "entity-schema",
+    "verb": "get",
+    "keywords": [
+      "forex",
+      "schema"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Document_АвансовыйОтчет",
+      "Catalog_Валюты"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_esf_submission_status",
+    "description": "Returns ЭСФ (Electronic Tax Invoice) submission summary for the period from Document_ЭСФ. Shows: total ESF count, submitted/accepted, rejected, pending, totalAmount, totalVat (KZT), and rejectionRate %. Kazakhstan requires all VAT payers to submit ЭСФ through the IS ЭСФ portal — a high rejection rate signals data entry or format issues. Returns: EsfStatusSummary with period, counts by status, totals. Drill: call onec_get_esf_errors(periodFrom, periodTo) to see rejection reasons for each failed document.",
+    "shortDescription": "Returns ЭСФ (Electronic Tax Invoice) submission summary for the period from Document_ЭСФ.",
+    "domain": "esf",
+    "verb": "get",
+    "keywords": [
+      "vat",
+      "esf",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Document_ЭСФ"
+    ],
+    "drillsTo": [
+      "onec_get_esf_errors"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_esf_errors",
+    "description": "Returns all rejected ЭСФ (Electronic Tax Invoice) documents with error codes and messages for the period. For each rejected document, fetches errors from Document_ЭСФ_ЭСФ_Ошибки subtable: errorCode, errorMessage, counterpartyGuid, documentDate. Common error codes: FORMAT_ERROR (field missing), SIGNATURE_ERROR (certificate expired), DUPLICATE (already submitted), COUNTERPARTY_NOT_FOUND. Returns: errors[], total, period. Drill: fix underlying 1C document and re-submit through IS ЭСФ portal. Then re-run onec_get_esf_submission_status to verify cleared.",
+    "shortDescription": "Returns all rejected ЭСФ (Electronic Tax Invoice) documents with error codes and messages for the period.",
+    "domain": "esf",
+    "verb": "get",
+    "keywords": [
+      "vat",
+      "esf",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Document_ЭСФ"
+    ],
+    "drillsTo": [
+      "onec_get_esf_submission_status"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_fixed_asset_register",
+    "description": "Returns the full fixed asset register from Catalog_ОсновныеСредства with acquisition cost, useful life, depreciation method, and location. Cross-validates register total against GL accounts 2410/2420 (tolerance 0.01 KZT) and returns a glMismatch flag. Drill: call onec_get_depreciation_schedule(assetGuid) for per-asset amortization or onec_get_account_card('2410', ...) to trace individual postings.",
+    "shortDescription": "Returns the full fixed asset register from Catalog_ОсновныеСредства with acquisition cost, useful life, depreciation method, and location.",
+    "domain": "fixed-asset",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [
+      "2410",
+      "2420"
+    ],
+    "entities": [
+      "Catalog_ОсновныеСредства"
+    ],
+    "drillsTo": [
+      "onec_get_depreciation_schedule",
+      "onec_get_account_card"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_depreciation_schedule",
+    "description": "Returns the monthly depreciation schedule for a specific fixed asset from InformationRegister_НачислениеАмортизацииОСБухгалтерскийУчет. Shows per-period depreciation amount and running accumulated total. Drill: call onec_analyze_depreciation_impact to see P&L effect, or onec_get_account_card('7210'/'8110', ...) to verify posted entries match the schedule.",
+    "shortDescription": "Returns the monthly depreciation schedule for a specific fixed asset from InformationRegister_НачислениеАмортизацииОСБухгалтерскийУчет.",
+    "domain": "fixed-asset",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "payroll",
+      "expense",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [
+      "7210",
+      "8110"
+    ],
+    "entities": [
+      "InformationRegister_НачислениеАмортизацииОСБухгалтерскийУчет"
+    ],
+    "drillsTo": [
+      "onec_analyze_depreciation_impact",
+      "onec_get_account_card"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "hr",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_analyze_depreciation_impact",
+    "description": "Computes total depreciation charged over a period from InformationRegister_НачислениеАмортизацииОСБухгалтерскийУчет and compares to GL debit turnovers on accounts 7210 (admin) and 8110 (production). Use to verify P&L impact and confirm depreciation is fully posted. Drill: call onec_get_account_card with account 7210 or 8110 to see individual postings.",
+    "shortDescription": "Computes total depreciation charged over a period from InformationRegister_НачислениеАмортизацииОСБухгалтерскийУчет and compares to GL debit turnovers on accounts 7210 (admin) and 8110 (production).",
+    "domain": "fixed-asset",
+    "verb": "analyze",
+    "keywords": [
+      "fa",
+      "payroll",
+      "expense",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [
+      "7210",
+      "8110"
+    ],
+    "entities": [
+      "InformationRegister_НачислениеАмортизацииОСБухгалтерскийУчет"
+    ],
+    "drillsTo": [
+      "onec_get_account_card"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "hr",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_impairment_indicators",
+    "description": "Identifies fixed assets whose age (months since acquisition) exceeds their stated useful life, flagging them as USEFUL_LIFE_EXCEEDED. These are candidates for impairment review under IFRS/GAAP. Drill: call onec_get_disposal_candidates for the prioritized disposal list, or onec_get_depreciation_schedule(assetGuid) to review residual value.",
+    "shortDescription": "Identifies fixed assets whose age (months since acquisition) exceeds their stated useful life, flagging them as USEFUL_LIFE_EXCEEDED.",
+    "domain": "fixed-asset",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_disposal_candidates",
+      "onec_get_depreciation_schedule"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_disposal_candidates",
+    "description": "Returns fixed assets that have exceeded their useful life and are candidates for write-off (Document_СписаниеОС). Based on onec_get_impairment_indicators logic. Drill: verify each asset in onec_get_fixed_asset_register, then check onec_get_depreciation_schedule to confirm full depreciation before disposal.",
+    "shortDescription": "Returns fixed assets that have exceeded their useful life and are candidates for write-off (Document_СписаниеОС).",
+    "domain": "fixed-asset",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Document_СписаниеОС"
+    ],
+    "drillsTo": [
+      "onec_get_impairment_indicators",
+      "onec_get_fixed_asset_register",
+      "onec_get_depreciation_schedule"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_asset_location_audit",
+    "description": "Compares the registered department (Подразделение_Key) of each fixed asset in Catalog_ОсновныеСредства with the physical location from InformationRegister_МестонахождениеОСБухгалтерскийУчет and flags mismatches. Use during inventory count or annual audit. Drill: investigate mismatches by calling onec_get_fixed_asset_register filtered by departmentGuid.",
+    "shortDescription": "Compares the registered department (Подразделение_Key) of each fixed asset in Catalog_ОсновныеСредства with the physical location from InformationRegister_МестонахождениеОСБухгалтерскийУчет and fla...",
+    "domain": "fixed-asset",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "inventory",
+      "audit",
+      "drill",
+      "cost_center"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Catalog_ОсновныеСредства",
+      "InformationRegister_МестонахождениеОСБухгалтерскийУчет"
+    ],
+    "drillsTo": [
+      "onec_get_fixed_asset_register"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_validate_fa_completeness",
+    "description": "Validates that the fixed asset register is complete: (1) total acquisition cost matches GL balance on accounts 2410+2420 within 0.01 KZT; (2) all assets with positive useful life have accumulated depreciation. Returns passed flag, difference amount, and issue list. Run at month-end close. Drill: call onec_get_account_card('2410', ...) to trace discrepancies.",
+    "shortDescription": "Validates that the fixed asset register is complete: (1) total acquisition cost matches GL balance on accounts 2410+2420 within 0.01 KZT; (2) all assets with positive useful life have accumulated d...",
+    "domain": "fixed-asset",
+    "verb": "validate",
+    "keywords": [
+      "fa",
+      "close",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [
+      "2410",
+      "2420"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_account_card"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_generate_full_report",
+    "description": "Генерирует глубокий финансово-промышленный отчёт в формате Markdown для любой организации в 1С.  Работает с любой отраслью: торговля, производство, услуги, строительство, транспорт, АПК —  отрасль определяется автоматически.  Собирает ОСВ (все разделы 1–8), расшифровки: дебиторка, кредиторка с aging, авансы выданные/полученные,  займы и кредиты по займодавцу, продажи, закупки, ОС, денежные потоки.  Формирует: полный баланс из ОСВ, P&L, сводную структуру баланса, налоговую позицию,  финансовую диагностику с отраслевыми бенчмарками, риски и рекомендации руководству.  При заданных LLM-настройках (LLM_BASE_URL/LLM_API_KEY/LLM_MODEL — любой OpenAI-совместимый провайдер:  OpenAI, OpenRouter, DeepSeek, Groq, локальный Ollama/LM Studio, Anthropic) — AI-дайджест; иначе — детерминированный анализ.",
+    "shortDescription": "Генерирует глубокий финансово-промышленный отчёт в формате Markdown для любой организации в 1С.",
+    "domain": "fullreport",
+    "verb": "generate",
+    "keywords": [
+      "fa",
+      "ar",
+      "ap",
+      "revenue",
+      "setup"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_generate_act_sverki",
+    "description": "Generate Акт сверки взаиморасчётов (reconciliation act) as HTML for a contractor and period. Pulls live data: contractor balance by account + all payment movements. Saves to reports/generated/. Open in browser to print/export as PDF.",
+    "shortDescription": "Generate Акт сверки взаиморасчётов (reconciliation act) as HTML for a contractor and period.",
+    "domain": "generator",
+    "verb": "generate",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_generate_debt_certificate",
+    "description": "Generate Справка о задолженности (debt certificate) as HTML for a contractor as of a given date. Shows all accounts, balances, and a signed conclusion. Saves to reports/generated/.",
+    "shortDescription": "Generate Справка о задолженности (debt certificate) as HTML for a contractor as of a given date.",
+    "domain": "generator",
+    "verb": "generate",
+    "keywords": [
+      "fa"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_generate_creditors_report",
+    "description": "Generate full Реестр кредиторской задолженности (creditors register) as a printable HTML report with color-coded aging, contracts, and payment history. Covers accounts 3310/3350/3387. Saves to reports/generated/.",
+    "shortDescription": "Generate full Реестр кредиторской задолженности (creditors register) as a printable HTML report with color-coded aging, contracts, and payment history.",
+    "domain": "generator",
+    "verb": "generate",
+    "keywords": [
+      "fa",
+      "payroll",
+      "ap"
+    ],
+    "glAccounts": [
+      "3310",
+      "3350",
+      "3387"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_generate_obligation_notice",
+    "description": "Generate Уведомление о задолженности (formal demand/notice letter) as HTML for a contractor. Includes total owed, breakdown by account, and due date. Saves to reports/generated/.",
+    "shortDescription": "Generate Уведомление о задолженности (formal demand/notice letter) as HTML for a contractor.",
+    "domain": "generator",
+    "verb": "generate",
+    "keywords": [
+      "fa",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_resolve_guid",
+    "description": "Resolve a 1C GUID (Ref_Key) to its entity type and human-readable name. Searches Catalog, Document, ChartOfAccounts and all other entity sets. Use the 'hint' field to skip straight to the correct entity set when the type is known.",
+    "shortDescription": "Resolve a 1C GUID (Ref_Key) to its entity type and human-readable name.",
+    "domain": "guid-resolver",
+    "verb": "resolve",
+    "keywords": [
+      "schema"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_resolve_guids",
+    "description": "Resolve up to 50 1C GUIDs in parallel. Returns an array of resolutions in input order.  Useful for annotating a list of Ref_Key values extracted from documents or registers.",
+    "shortDescription": "Resolve up to 50 1C GUIDs in parallel.",
+    "domain": "guid-resolver",
+    "verb": "resolve",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_nma_register",
+    "description": "Returns the intangible asset (НМА) register as of a given date: all active NMA items from Catalog_НематериальныеАктивы with acquisition cost, useful life, amortization method, and net book value. Also cross-checks register total against GL account 2700 balance — a mismatch indicates unposted acceptance documents or manual GL adjustments. Returns: assets[], glBalance2700, registerTotal, glMismatch flag. Drill: for amortization schedule of a specific asset call onec_get_nma_amortization_schedule(assetGuid, periodFrom, periodTo).",
+    "shortDescription": "Returns the intangible asset (НМА) register as of a given date: all active NMA items from Catalog_НематериальныеАктивы with acquisition cost, useful life, amortization method, and net book value.",
+    "domain": "intangible-asset",
+    "verb": "get",
+    "keywords": [
+      "nma",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [
+      "2700"
+    ],
+    "entities": [
+      "Catalog_НематериальныеАктивы"
+    ],
+    "drillsTo": [
+      "onec_get_nma_amortization_schedule"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_nma_amortization_schedule",
+    "description": "Returns the monthly amortization schedule for a specific intangible asset from InformationRegister_НачислениеАмортизацииНМАБухгалтерскийУчет. Shows period, amortizationAmount, accumulated total, and remainingValue for each month in the specified range. Use after onec_get_nma_register to drill into a specific asset's amortization history. Returns: assetGuid, entries[] with period/amortizationAmount/accumulated.",
+    "shortDescription": "Returns the monthly amortization schedule for a specific intangible asset from InformationRegister_НачислениеАмортизацииНМАБухгалтерскийУчет.",
+    "domain": "intangible-asset",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "nma",
+      "payroll",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "InformationRegister_НачислениеАмортизацииНМАБухгалтерскийУчет"
+    ],
+    "drillsTo": [
+      "onec_get_nma_register"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_investigate_payment",
+    "description": "Полный анализ одного платёжного поручения за один вызов.  Возвращает: счёт списания (номер + банк), получатель (имя + ИНН),  сотрудник (ФИО + дата рождения если выплата ЗП/премии),  статус ведомости, уровень риска и вердикт.  Заменяет 8-10 ручных запросов при расследовании подозрительного платежа.",
+    "shortDescription": "Полный анализ одного платёжного поручения за один вызов.",
+    "domain": "investigation",
+    "verb": "investigate",
+    "keywords": [
+      "bank",
+      "fa",
+      "hr"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_find_duplicate_payments",
+    "description": "Найти все дублирующие платежи за период.  Для каждой пары: имя контрагента, назначения обоих документов,  один ли счёт списания, один ли сотрудник-получатель (если ЗП),  уровень риска (high/medium) и конкретная рекомендация.  Использует windowHours для определения временного окна дубля (по умолчанию 24ч).",
+    "shortDescription": "Найти все дублирующие платежи за период.",
+    "domain": "investigation",
+    "verb": "find",
+    "keywords": [
+      "hr",
+      "close"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_get_metadata",
+    "description": "List available entity types from the 1C $metadata endpoint. Use this to discover what catalogs, documents, and registers are available before querying.",
+    "shortDescription": "List available entity types from the 1C $metadata endpoint.",
+    "domain": "metadata",
+    "verb": "get",
+    "keywords": [
+      "schema"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_payroll_summary",
+    "description": "Returns aggregate payroll accruals for a period from Document_НачислениеЗарплатыРаботникамОрганизаций: total accrual, document count, and GL balance on account 3350. Use to answer 'what was our payroll this month?' Drill: call onec_drill_payroll_by_employee for per-person detail or onec_drill_payroll_by_department for org-chart view.",
+    "shortDescription": "Returns aggregate payroll accruals for a period from Document_НачислениеЗарплатыРаботникамОрганизаций: total accrual, document count, and GL balance on account 3350.",
+    "domain": "payroll",
+    "verb": "get",
+    "keywords": [
+      "payroll",
+      "hr",
+      "drill",
+      "cost_center"
+    ],
+    "glAccounts": [
+      "3350"
+    ],
+    "entities": [
+      "Document_НачислениеЗарплатыРаботникамОрганизаций"
+    ],
+    "drillsTo": [
+      "onec_drill_payroll_by_employee",
+      "onec_drill_payroll_by_department"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "hr",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_drill_payroll_by_employee",
+    "description": "Breaks down payroll accruals by employee for the period, showing each employee's total accrual, deductions, and net pay. Drill from onec_get_payroll_summary. Returns employeeGuid that can be used to look up HR records. Drill: call onec_get_hr_transactions for an employee's hire/dismiss history.",
+    "shortDescription": "Breaks down payroll accruals by employee for the period, showing each employee's total accrual, deductions, and net pay.",
+    "domain": "payroll",
+    "verb": "drill",
+    "keywords": [
+      "payroll",
+      "hr",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_payroll_summary",
+      "onec_get_hr_transactions"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_drill_payroll_by_department",
+    "description": "Aggregates payroll accruals by department (Подразделение) for the period. Use to compare labor costs across business units. Drill: for any department with high variance, call onec_drill_payroll_by_employee filtered to that department.",
+    "shortDescription": "Aggregates payroll accruals by department (Подразделение) for the period.",
+    "domain": "payroll",
+    "verb": "drill",
+    "keywords": [
+      "payroll",
+      "hr",
+      "drill",
+      "cost_center"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_drill_payroll_by_employee"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "hr",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_hr_transactions",
+    "description": "Returns HR lifecycle documents (hires from Document_ПриемНаРаботуВОрганизацию, dismissals from Document_УвольнениеИзОрганизаций) for the period. Use to track headcount changes. Drill: for each HR event, call onec_get_headcount_analysis to see the resulting headcount as of any date.",
+    "shortDescription": "Returns HR lifecycle documents (hires from Document_ПриемНаРаботуВОрганизацию, dismissals from Document_УвольнениеИзОрганизаций) for the period.",
+    "domain": "payroll",
+    "verb": "get",
+    "keywords": [
+      "hr",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Document_ПриемНаРаботуВОрганизацию",
+      "Document_УвольнениеИзОрганизаций"
+    ],
+    "drillsTo": [
+      "onec_get_headcount_analysis"
+    ],
+    "persona": [
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_get_benefit_accruals",
+    "description": "Returns benefit accruals for the period from GL account 3380 turnovers. Covers vacation reserves, sick pay, and other employee benefits. Cross-validates against the 3380 credit turnover. Drill: call onec_get_account_card('3380', ...) to see individual benefit posting entries.",
+    "shortDescription": "Returns benefit accruals for the period from GL account 3380 turnovers.",
+    "domain": "payroll",
+    "verb": "get",
+    "keywords": [
+      "hr",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [
+      "3380"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_account_card"
+    ],
+    "persona": [
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_analyze_payroll_variance",
+    "description": "Computes month-over-month payroll variance by comparing current period accruals against a prior period. Flags anomalous variance (>20% change) for investigation. Use for payroll audit and unusual-item detection. Drill: for anomalous months, call onec_drill_payroll_by_employee to identify which employees drove the change.",
+    "shortDescription": "Computes month-over-month payroll variance by comparing current period accruals against a prior period.",
+    "domain": "payroll",
+    "verb": "analyze",
+    "keywords": [
+      "payroll",
+      "hr",
+      "audit",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_drill_payroll_by_employee"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_get_headcount_analysis",
+    "description": "Returns active headcount as of a given date from InformationRegister_РаботникиОрганизаций (slice last), broken down by department. Excludes employees with status 'Уволен'. Use for staffing reports and FTE analysis. Drill: call onec_get_hr_transactions for the period to see what changed since last headcount.",
+    "shortDescription": "Returns active headcount as of a given date from InformationRegister_РаботникиОрганизаций (slice last), broken down by department.",
+    "domain": "payroll",
+    "verb": "get",
+    "keywords": [
+      "hr",
+      "drill",
+      "cost_center"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "InformationRegister_РаботникиОрганизаций"
+    ],
+    "drillsTo": [
+      "onec_get_hr_transactions"
+    ],
+    "persona": [
+      "auditor",
+      "controller",
+      "hr",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_validate_salary_completeness",
+    "description": "Checks that every active employee (from onec_get_headcount_analysis) has a payroll accrual document for the period. Returns passed flag, headcount, employees with payroll, and a list of missing employees. Run before payroll submission to catch missed staff. Drill: call onec_drill_payroll_by_employee to confirm which GUIDs are missing.",
+    "shortDescription": "Checks that every active employee (from onec_get_headcount_analysis) has a payroll accrual document for the period.",
+    "domain": "payroll",
+    "verb": "validate",
+    "keywords": [
+      "payroll",
+      "hr",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_headcount_analysis",
+      "onec_drill_payroll_by_employee"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_get_production_costs",
+    "description": "Get accumulated WIP (незавершённое производство) on account 8110 (Основное производство).  Use for any manufacturer: grain farms, food processing, construction, factories.  Shows total work-in-progress balance for the current production cycle.",
+    "shortDescription": "Get accumulated WIP (незавершённое производство) on account 8110 (Основное производство).",
+    "domain": "production",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "expense",
+      "workflow"
+    ],
+    "glAccounts": [
+      "8110"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_materials_balance",
+    "description": "Get raw materials and supplies balance (account 1310) from AccumulationRegister_ТоварыОрганизацийБУ.  Applicable to any industry: seeds/fertilizers (agro), raw materials (manufacturing), consumables (services).",
+    "shortDescription": "Get raw materials and supplies balance (account 1310) from AccumulationRegister_ТоварыОрганизацийБУ.",
+    "domain": "production",
+    "verb": "get",
+    "keywords": [
+      "inventory"
+    ],
+    "glAccounts": [
+      "1310"
+    ],
+    "entities": [
+      "AccumulationRegister_ТоварыОрганизацийБУ"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_finished_goods_balance",
+    "description": "Get finished goods balance (account 1320 — Готовая продукция) from the accounting register.  Returns debit/credit balances and net stock value. Works for any industry producing or stocking finished goods.",
+    "shortDescription": "Get finished goods balance (account 1320 — Готовая продукция) from the accounting register.",
+    "domain": "production",
+    "verb": "get",
+    "keywords": [
+      "inventory"
+    ],
+    "glAccounts": [
+      "1320"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_payroll_taxes_summary",
+    "description": "Get KZ payroll tax register balances (ОПВ, СО, ВОСМС, ИПН) for a period.  Pulls from corresponding AccumulationRegister tables. Applicable to all KZ companies.",
+    "shortDescription": "Get KZ payroll tax register balances (ОПВ, СО, ВОСМС, ИПН) for a period.",
+    "domain": "production",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "ipn",
+      "opv",
+      "vosms",
+      "payroll"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_get_vat_register",
+    "description": "Get НДС register positions (AccumulationRegister_НДС_Balance) for a period.",
+    "shortDescription": "Get НДС register positions (AccumulationRegister_НДС_Balance) for a period.",
+    "domain": "production",
+    "verb": "get",
+    "keywords": [
+      "vat"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "AccumulationRegister_НДС"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_pl_summary",
+    "description": "P&L summary from accounting registers: revenue (6010), COGS (7010), overhead (7210).  Returns gross profit and operating profit. Works for any KZ industry.",
+    "shortDescription": "P&L summary from accounting registers: revenue (6010), COGS (7010), overhead (7210).",
+    "domain": "production",
+    "verb": "get",
+    "keywords": [
+      "cogs",
+      "revenue",
+      "expense"
+    ],
+    "glAccounts": [
+      "6010",
+      "7010",
+      "7210"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_calculate_payroll_taxes",
+    "description": "Calculate KZ payroll taxes for a given gross salary per НК РК 2026.  Pure calculation — no 1C call. Returns ОПВ, ОППВ, СО, ВОСМС, ООСМС, ИПН, СН, net salary, total employer cost.  МРП 2026 = 3,692 tg | МЗП = 85,000 tg | Standard ИПН deduction = 14 МРП = 51,688 tg.",
+    "shortDescription": "Calculate KZ payroll taxes for a given gross salary per НК РК 2026.",
+    "domain": "production",
+    "verb": "calculate",
+    "keywords": [
+      "fa",
+      "ipn",
+      "opv",
+      "vosms",
+      "payroll"
+    ],
+    "glAccounts": [
+      "2026"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_get_kpn_estimate",
+    "description": "Estimate КПН (corporate income tax) using actual 1C turnovers.  Base rate: 20% (НК РК Ст.313).  For agricultural producers: add isAgro=true to apply 70% reduction per Ст.285 НК РК.  Revenue from 6010, costs from 7010 + 7210 + 7710.",
+    "shortDescription": "Estimate КПН (corporate income tax) using actual 1C turnovers.",
+    "domain": "production",
+    "verb": "get",
+    "keywords": [
+      "ipn",
+      "kpn",
+      "cogs",
+      "revenue",
+      "expense"
+    ],
+    "glAccounts": [
+      "6010",
+      "7010",
+      "7210",
+      "7710"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_provision_register",
+    "description": "Returns all active provisions from Catalog_РезервыПредстоящихРасходов (if it exists) cross-validated against GL balances on accounts 3520 (warranty/litigation provisions) and 3530 (restructuring provisions). Returns totalProvisions, glTotal, and a mismatch flag. If no provision catalog exists, returns GL balances as the ground truth. Drill: call onec_validate_provision_adequacy to check coverage ratios.",
+    "shortDescription": "Returns all active provisions from Catalog_РезервыПредстоящихРасходов (if it exists) cross-validated against GL balances on accounts 3520 (warranty/litigation provisions) and 3530 (restructuring pr...",
+    "domain": "provisions",
+    "verb": "get",
+    "keywords": [
+      "expense",
+      "validate",
+      "drill",
+      "provision"
+    ],
+    "glAccounts": [
+      "3520",
+      "3530"
+    ],
+    "entities": [
+      "Catalog_РезервыПредстоящихРасходов"
+    ],
+    "drillsTo": [
+      "onec_validate_provision_adequacy"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_validate_provision_adequacy",
+    "description": "Checks that each provision's amount covers 100% of its stated exposure (Экспозиция). Underfunded provisions have coverage < 100% and represent potential unrecognized liabilities. Returns passed flag, list of underfunded provisions, total shortfall, and recommendations. Run before annual audit or IFRS reporting. Drill: for each underfunded provision, call onec_get_account_card('3520'/'3530', ...) to review posting history.",
+    "shortDescription": "Checks that each provision's amount covers 100% of its stated exposure (Экспозиция).",
+    "domain": "provisions",
+    "verb": "validate",
+    "keywords": [
+      "audit",
+      "validate",
+      "drill",
+      "provision"
+    ],
+    "glAccounts": [
+      "3520",
+      "3530"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_account_card"
+    ],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_exchange_rates",
+    "description": "Get current or historical exchange rates from InformationRegister_КурсыВалют (slice last). Fields: Курс, Кратность.",
+    "shortDescription": "Get current or historical exchange rates from InformationRegister_КурсыВалют (slice last).",
+    "domain": "register",
+    "verb": "get",
+    "keywords": [
+      "forex",
+      "fa"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "InformationRegister_КурсыВалют"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_contractor_settlements",
+    "description": "Get receivables/payables by contractor from AccumulationRegister_ВзаиморасчетыОрганизацийСКонтрагентами.",
+    "shortDescription": "Get receivables/payables by contractor from AccumulationRegister_ВзаиморасчетыОрганизацийСКонтрагентами.",
+    "domain": "register",
+    "verb": "get",
+    "keywords": [
+      "ar",
+      "ap"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "AccumulationRegister_ВзаиморасчетыОрганизацийСКонтрагентами"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_account_breakdown",
+    "description": "Get account balance breakdown by sub-accounts (субконто) — nomenclature, warehouse, or contractor — from AccountingRegister_Типовой/Balance. Use to drill down into any balance account (1310, 1330, 1210, 3310, etc.). Returns rows with item name, warehouse/contractor name, quantity, and balance amount. Use dateTo to get a historical balance as of that date.",
+    "shortDescription": "Get account balance breakdown by sub-accounts (субконто) — nomenclature, warehouse, or contractor — from AccountingRegister_Типовой/Balance.",
+    "domain": "register",
+    "verb": "get",
+    "keywords": [
+      "ar",
+      "ap",
+      "inventory",
+      "drill"
+    ],
+    "glAccounts": [
+      "1310",
+      "1330",
+      "1210",
+      "3310"
+    ],
+    "entities": [
+      "AccountingRegister_Типовой"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_account_card",
+    "description": "Get account card (карточка счёта): individual debit/credit postings for an account code over a date range from AccountingRegister_Типовой_RecordType. Shows each posting with date, source document GUID, line number, amount, and corresponding account. Use to trace every movement through any account.",
+    "shortDescription": "Get account card (карточка счёта): individual debit/credit postings for an account code over a date range from AccountingRegister_Типовой_RecordType.",
+    "domain": "register",
+    "verb": "get",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [
+      "AccountingRegister_Типовой"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_inventory_balance",
+    "description": "Get inventory balances (quantity + cost) from AccumulationRegister_ТоварыОрганизацийБУ.",
+    "shortDescription": "Get inventory balances (quantity + cost) from AccumulationRegister_ТоварыОрганизацийБУ.",
+    "domain": "register",
+    "verb": "get",
+    "keywords": [
+      "inventory"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "AccumulationRegister_ТоварыОрганизацийБУ"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_identify_related_party_transactions",
+    "description": "Identifies transactions (sales and purchases) with related parties by filtering Document_РеализацияТоваровУслуг and Document_ПоступлениеТоваровУслуг where the counterparty has the СвязаннаяСторона flag set in Catalog_Контрагенты. Required for IFRS IAS 24 disclosures. If no related parties are flagged, returns a note with configuration instructions. Drill: call onec_validate_rpt_pricing to check if related-party prices are within market tolerance.",
+    "shortDescription": "Identifies transactions (sales and purchases) with related parties by filtering Document_РеализацияТоваровУслуг and Document_ПоступлениеТоваровУслуг where the counterparty has the СвязаннаяСторона ...",
+    "domain": "related-party",
+    "verb": "identify",
+    "keywords": [
+      "fa",
+      "inventory",
+      "revenue",
+      "validate",
+      "drill",
+      "related_party",
+      "setup"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "Document_РеализацияТоваровУслуг",
+      "Document_ПоступлениеТоваровУслуг",
+      "Catalog_Контрагенты"
+    ],
+    "drillsTo": [
+      "onec_validate_rpt_pricing"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_validate_rpt_pricing",
+    "description": "Validates that related-party transaction prices are within the specified market tolerance (default ±10%). Returns passed flag and any pricing anomalies. Full market-price comparison requires a reference price list in 1C. Returns a note explaining the limitation if no price reference is available. Drill: for anomalous transactions, call onec_get_document(documentGuid) to inspect line-item pricing.",
+    "shortDescription": "Validates that related-party transaction prices are within the specified market tolerance (default ±10%).",
+    "domain": "related-party",
+    "verb": "validate",
+    "keywords": [
+      "validate",
+      "drill",
+      "related_party"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_document"
+    ],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_report",
+    "description": "Unified financial reports interface. Specify reportType to get:\\n\\n",
+    "shortDescription": "Unified financial reports interface.",
+    "domain": "reports",
+    "verb": "get",
+    "keywords": [],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_scan_documents",
+    "description": "Iterates through every document of selected types in the given period and flags errors at the individual-document level. Checks: DOC-001 unposted documents, DOC-002 missing contractor, DOC-003 zero-amount financial documents. Returns a ScanReport with summary counts and per-document findings (documentGuid, documentNumber, description, suggestedFix). Use limitPerType=10 for a quick test run. Use docTypes to scan a specific subset.",
+    "shortDescription": "Iterates through every document of selected types in the given period and flags errors at the individual-document level.",
+    "domain": "scan",
+    "verb": "scan",
+    "keywords": [
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_scan_all",
+    "description": "Full object-level scan: reads every document AND every accounting posting (journal entry) in the period. Document checks (DOC-*): unposted docs, missing contractor, zero-amount documents. Posting checks (POST-*): circular postings (Дт=Кт same account), zero-amount postings, red storno (negative amount). Returns a merged ScanReport sorted by severity (critical → error → warn → info) with scanned counts and per-item findings. Set includePostings=false to scan only document headers (faster). Use limitPerType for quick test runs. TIP: For large databases (>5,000 docs/year) consider scanning one month at a time or one docType at a time.",
+    "shortDescription": "Full object-level scan: reads every document AND every accounting posting (journal entry) in the period.",
+    "domain": "scan",
+    "verb": "scan",
+    "keywords": [
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_audit_gl_account_mapping",
+    "description": "Phase-0 setup audit: checks that all required Kazakhstan standard accounts (1010, 1030, 1210, 1310, 1320, 3110, 3130, 3310, 3350, 6010, 7010) exist in the 1C chart of accounts and are not marked for deletion. Run this first on any new tenant or after a chart-of-accounts migration to catch misconfiguration before transactional tools are used. Returns: totalAccountsInChart, requiredAccountsPresent[], requiredAccountsMissing[], deletedRequiredAccounts[], issues[] with severity/recommendation, and a top-level passed flag. Drill: if issues[] is non-empty, fix in 1C then re-run to confirm. Then run onec_verify_opening_balances to check period transition integrity.",
+    "shortDescription": "Phase-0 setup audit: checks that all required Kazakhstan standard accounts (1010, 1030, 1210, 1310, 1320, 3110, 3130, 3310, 3350, 6010, 7010) exist in the 1C chart of accounts and are not marked fo...",
+    "domain": "setup-audit",
+    "verb": "audit",
+    "keywords": [
+      "cash",
+      "bank",
+      "vat",
+      "kpn",
+      "payroll",
+      "ar",
+      "ap",
+      "inventory",
+      "cogs",
+      "revenue",
+      "audit",
+      "validate",
+      "drill",
+      "setup"
+    ],
+    "glAccounts": [
+      "1010",
+      "1030",
+      "1210",
+      "1310",
+      "1320",
+      "3110",
+      "3130",
+      "3310",
+      "3350",
+      "6010",
+      "7010"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_verify_opening_balances"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "hr",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_verify_opening_balances",
+    "description": "Verifies that opening balances at asOfDate match the closing balances of the prior day (asOfDate − 1). A mismatch signals an unposted period-transition document, a manual GL adjustment applied mid-close, or a chart-of-accounts reclassification that was not properly carried forward. Returns: mismatches[] (accountCode, priorCloseDr/Cr, currentOpenDr/Cr, diffDr, diffCr), passed flag, maxAbsDiff in KZT. Tolerance: 0.01 KZT. Run at the start of each month-end close or after a year-end reform (реформация баланса). Drill: for each mismatch call onec_analyze_account(accountCode) to inspect the transition posting detail.",
+    "shortDescription": "Verifies that opening balances at asOfDate match the closing balances of the prior day (asOfDate − 1).",
+    "domain": "setup-audit",
+    "verb": "verify",
+    "keywords": [
+      "close",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_analyze_account"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_skill_lookup",
+    "description": "Fetch the full text of a domain skill document (accounting rules, costing flows, validation rulebook)., Use when a tool description references a rule like 'kz-agro-validation-rules.md#A.1' — call this to read the actual rule text.",
+    "shortDescription": "Fetch the full text of a domain skill document (accounting rules, costing flows, validation rulebook)., Use when a tool description references a rule like 'kz-agro-validation-rules.md#A.1' — call t...",
+    "domain": "skill-lookup",
+    "verb": "skill",
+    "keywords": [
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_stock_report",
+    "description": "Full inventory stock report (accounts 1310 Materials, 1320 Finished goods, 1330 Goods for resale).  For each item: quantity on hand per warehouse with warehouse names, total cost value, weighted average cost price,  last procurement price and date from ПоступлениеТоваровУслуг within the procurement window,  last supplier name and GUID, document number. Sorted by total cost value descending.  Use dateFrom to narrow the procurement price lookup (e.g. current year only).  Use dateTo to get a historical balance as of that date.  Use to answer: 'What do we have in stock, at what price, from whom, and where?'",
+    "shortDescription": "Full inventory stock report (accounts 1310 Materials, 1320 Finished goods, 1330 Goods for resale).",
+    "domain": "stock",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "inventory"
+    ],
+    "glAccounts": [
+      "1310",
+      "1320",
+      "1330"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant"
+    ]
+  },
+  {
+    "name": "onec_get_supplier_performance",
+    "description": "Returns supplier performance metrics for the period: total purchases, document count, average invoice amount, return count, return amount, and return rate. Sourced from Document_ПоступлениеТоваровУслуг and Document_ВозвратТоваровПоставщику. Sorted by total purchases descending. Drill: call onec_get_supplier_concentration for HHI analysis, or onec_get_account_card('3310', ...) to trace AP movements by supplier.",
+    "shortDescription": "Returns supplier performance metrics for the period: total purchases, document count, average invoice amount, return count, return amount, and return rate.",
+    "domain": "supply-chain",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "ap",
+      "inventory",
+      "drill"
+    ],
+    "glAccounts": [
+      "3310"
+    ],
+    "entities": [
+      "Document_ПоступлениеТоваровУслуг",
+      "Document_ВозвратТоваровПоставщику"
+    ],
+    "drillsTo": [
+      "onec_get_supplier_concentration",
+      "onec_get_account_card"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_spend_by_category",
+    "description": "Returns procurement spend aggregated by nomenclature category for the period. Useful for spend analytics and category management. Each category shows total amount, document count, and percent of grand total. Drill: call onec_get_supplier_performance to see which suppliers drive spend within a category.",
+    "shortDescription": "Returns procurement spend aggregated by nomenclature category for the period.",
+    "domain": "supply-chain",
+    "verb": "get",
+    "keywords": [
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_supplier_performance"
+    ],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_supplier_concentration",
+    "description": "Returns top-10 suppliers by spend with their combined share of total procurement (top10Percent) and a Herfindahl-Hirschman Index (HHI) measuring supplier concentration risk. HHI > 2500 indicates high concentration. Drill: for any high-concentration supplier, call onec_get_supplier_performance to review return rate and payment terms.",
+    "shortDescription": "Returns top-10 suppliers by spend with their combined share of total procurement (top10Percent) and a Herfindahl-Hirschman Index (HHI) measuring supplier concentration risk.",
+    "domain": "supply-chain",
+    "verb": "get",
+    "keywords": [
+      "drill"
+    ],
+    "glAccounts": [
+      "2500"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_supplier_performance"
+    ],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_get_ipn_summary",
+    "description": "Returns IPN (individual income tax) accruals and payments from AccumulationRegister_ИПНРасчетыСБюджетом for the period. Shows totalAccrued, totalPaid, outstanding balance, and cross-validates against GL account 3110. Required before ФНО 200.00 submission. Drill: call onec_drill_payroll_by_employee to verify per-employee IPN amounts.",
+    "shortDescription": "Returns IPN (individual income tax) accruals and payments from AccumulationRegister_ИПНРасчетыСБюджетом for the period.",
+    "domain": "tax-filing",
+    "verb": "get",
+    "keywords": [
+      "ipn",
+      "kpn",
+      "payroll",
+      "hr",
+      "revenue",
+      "budget",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [
+      "3110"
+    ],
+    "entities": [
+      "AccumulationRegister_ИПНРасчетыСБюджетом"
+    ],
+    "drillsTo": [
+      "onec_drill_payroll_by_employee"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "hr",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_get_fund_remittance_status",
+    "description": "Returns status of social fund remittances (ОПВ pension contributions and СО social insurance) for the period: accrued vs. paid vs. outstanding, with due date and overdue flag. Useful for checking that mandatory payroll contributions are paid on time (КЗ deadline: 25th of following month). Drill: call onec_get_account_card('3150'/'3210') to see individual payments.",
+    "shortDescription": "Returns status of social fund remittances (ОПВ pension contributions and СО social insurance) for the period: accrued vs.",
+    "domain": "tax-filing",
+    "verb": "get",
+    "keywords": [
+      "opv",
+      "so",
+      "sn",
+      "payroll",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [
+      "3150",
+      "3210"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_account_card"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_get_tax_filing_checklist",
+    "description": "Returns a structured checklist of Kazakhstan statutory tax filing deadlines for a given year: ФНО 100.00 (КПН), ФНО 300.00 (НДС), ФНО 200.00 (ИПН/СН), and monthly fund remittances (ОПВ/СО/ВОСМС). Each item shows type, description, due date, and isOverdue flag. Use for period-end readiness review.",
+    "shortDescription": "Returns a structured checklist of Kazakhstan statutory tax filing deadlines for a given year: ФНО 100.00 (КПН), ФНО 300.00 (НДС), ФНО 200.00 (ИПН/СН), and monthly fund remittances (ОПВ/СО/ВОСМС).",
+    "domain": "tax-filing",
+    "verb": "get",
+    "keywords": [
+      "fa",
+      "vat",
+      "ipn",
+      "opv",
+      "vosms",
+      "kpn",
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_validate_fund_remittance_timeliness",
+    "description": "Validates that ОПВ and СО fund remittances were paid by the statutory deadline (25th of the month following the payroll period). Returns passed flag, list of overdue items, total overdue amount, and estimated late-payment penalty (0.25% per day). Drill: call onec_get_fund_remittance_status for the overdue period to identify specific unpaid amounts.",
+    "shortDescription": "Validates that ОПВ and СО fund remittances were paid by the statutory deadline (25th of the month following the payroll period).",
+    "domain": "tax-filing",
+    "verb": "validate",
+    "keywords": [
+      "opv",
+      "so",
+      "payroll",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_fund_remittance_status"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_find_tool",
+    "description": "ROUTING TOOL — call this FIRST for any 1C Kazakhstan accounting task to find the right specialized tool(s) before guessing a name. Accepts Russian or English: 'cash position end of May', 'зарплата за май', 'НДС за 2 квартал', 'ОС амортизация', 'month close'. Returns ranked tool matches with usage hints, plus an optional named workflow (e.g. month_close, vat_filing, payroll_close) when the query matches one of the catalogued multi-step processes. Optional filters: persona='accountant'|'auditor'|'controller'|'hr'|'cfo' to focus role-specific tools; domain to constrain to a single functional area (cash, payroll, tax-filing, fixed-asset, validation-*, etc.). After receiving results, call the recommended tool directly with its real parameters. Skip this only when the user already named a specific onec_* tool.",
+    "shortDescription": "ROUTING TOOL — call this FIRST for any 1C Kazakhstan accounting task to find the right specialized tool(s) before guessing a name.",
+    "domain": "tool-discovery",
+    "verb": "find",
+    "keywords": [
+      "cash",
+      "fa",
+      "vat",
+      "payroll",
+      "audit",
+      "close",
+      "validate",
+      "workflow"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_validate_document_line_totals",
+    "description": "Per-line arithmetic (qty × price = amount) and per-document header sum check on Реализация or Поступление. Samples N most recent documents. See kz-agro-validation-rules.md#A.5.",
+    "shortDescription": "Per-line arithmetic (qty × price = amount) and per-document header sum check on Реализация or Поступление.",
+    "domain": "validation-document",
+    "verb": "validate",
+    "keywords": [
+      "fa",
+      "revenue",
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_validate_nomenclature_accounts",
+    "description": "Check nomenclature type matches its account: 1320 should only contain finished products, not services. Samples items on 1320. See kz-agro-validation-rules.md#A.5.",
+    "shortDescription": "Check nomenclature type matches its account: 1320 should only contain finished products, not services.",
+    "domain": "validation-document",
+    "verb": "validate",
+    "keywords": [
+      "inventory",
+      "validate"
+    ],
+    "glAccounts": [
+      "1320"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_validate_advance_aging",
+    "description": "Flag large outstanding advances on 1710 (paid to suppliers) and 3510 (received from customers). Includes top-3 contractors per account for follow-up. See kz-agro-validation-rules.md#A.6.",
+    "shortDescription": "Flag large outstanding advances on 1710 (paid to suppliers) and 3510 (received from customers).",
+    "domain": "validation-document",
+    "verb": "validate",
+    "keywords": [
+      "validate"
+    ],
+    "glAccounts": [
+      "1710",
+      "3510"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_drill_account_sign",
+    "description": "Drill into a specific account that has an abnormal sign (asset with Кт balance, liability with Дт balance). Returns the individual documents that drove the wrong-side balance, with recorder GUIDs, dates, amounts, and step-by-step correction instructions in 1C. Use after onec_validate_account_signs flags an account. See kz-agro-validation-rules.md#A.1.",
+    "shortDescription": "Drill into a specific account that has an abnormal sign (asset with Кт balance, liability with Дт balance).",
+    "domain": "validation-drilldown",
+    "verb": "drill",
+    "keywords": [
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_validate_account_signs"
+    ],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_drill_payroll_tax",
+    "description": "Per-document payroll tax check. For each НачислениеЗарплатыРаботникамОрганизаций in the period, compares actual vs expected amount on a specific tax account: ОПВ=3220, ОППВ=3250, СО=3211, ВОСМС=3213, ОСМС=3212, ИПН=3120, СН=3150. Flags documents where the rate deviates beyond tolerance, shows document number, base, expected, actual amounts, and gives 1C correction steps. Use after onec_validate_payroll_tax_rates flags a deviation. See kz-agro-validation-rules.md#A.3.",
+    "shortDescription": "Per-document payroll tax check.",
+    "domain": "validation-drilldown",
+    "verb": "drill",
+    "keywords": [
+      "fa",
+      "ipn",
+      "opv",
+      "vosms",
+      "sn",
+      "payroll",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [
+      "3220",
+      "3250",
+      "3211",
+      "3213",
+      "3212",
+      "3120",
+      "3150"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_validate_payroll_tax_rates"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_drill_missing_esf",
+    "description": "Full list of every РеализацияТоваровУслуг document that has no matching ЭСФ in InformationRegister_АктуальныеЭСФ. Returns document GUIDs, numbers, dates, amounts, VAT amounts, and per-document instructions on how to issue ЭСФ via ИС ЭСФ (esf.gov.kz). Use after onec_validate_esf_coverage flags missing ЭСФ. See kz-agro-validation-rules.md#A.3.",
+    "shortDescription": "Full list of every РеализацияТоваровУслуг document that has no matching ЭСФ in InformationRegister_АктуальныеЭСФ.",
+    "domain": "validation-drilldown",
+    "verb": "drill",
+    "keywords": [
+      "vat",
+      "esf",
+      "inventory",
+      "revenue",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "InformationRegister_АктуальныеЭСФ"
+    ],
+    "drillsTo": [
+      "onec_validate_esf_coverage"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_drill_stale_advances",
+    "description": "Detailed aging analysis of advances issued (1710) or advances received (3510). Lists each open advance line by contractor and contract, calculates age from contract start date, flags as stale if age exceeds agingDays (default 90). Provides specific corrective action per contractor: request delivery, demand return, or create offsetting реализация. Use after onec_validate_advance_aging or onec_validate_reconciliation finds large advance balances. See kz-agro-validation-rules.md#A.6.",
+    "shortDescription": "Detailed aging analysis of advances issued (1710) or advances received (3510).",
+    "domain": "validation-drilldown",
+    "verb": "drill",
+    "keywords": [
+      "revenue",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [
+      "1710",
+      "3510"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_validate_advance_aging",
+      "onec_validate_reconciliation"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_drill_vat_documents",
+    "description": "Per-sales-document НДС check. For each posted РеализацияТоваровУслуг, compares actual 3131 (НДС начисленный) posting vs expected (account 6010 net revenue × 12 %). Lists every document where VAT is missing or deviates beyond ±1 %. Returns document GUIDs, numbers, dates, revenue, expected and actual VAT, and step-by-step 1C fix instructions. Use after onec_validate_vat_charged_vs_revenue flags a mismatch. See kz-agro-validation-rules.md#A.3.",
+    "shortDescription": "Per-sales-document НДС check.",
+    "domain": "validation-drilldown",
+    "verb": "drill",
+    "keywords": [
+      "vat",
+      "payroll",
+      "inventory",
+      "revenue",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [
+      "3131",
+      "6010"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_validate_vat_charged_vs_revenue"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "hr",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_drill_wip_documents",
+    "description": "Analyze account 8112 (НЗП растениеводство) for a period: shows inputs by corr-account (1310 materials, 3350 payroll, 2420 depreciation, 8412 overhead) and outputs (harvest transfers 1320). Flags if harvest oприходование (1320←8112) is missing. Use to investigate WIP closure issues found by onec_validate_wip_closure. See kz-agro-validation-rules.md#A.3.",
+    "shortDescription": "Analyze account 8112 (НЗП растениеводство) for a period: shows inputs by corr-account (1310 materials, 3350 payroll, 2420 depreciation, 8412 overhead) and outputs (harvest transfers 1320).",
+    "domain": "validation-drilldown",
+    "verb": "drill",
+    "keywords": [
+      "fa",
+      "payroll",
+      "inventory",
+      "validate",
+      "drill",
+      "asset_transfer"
+    ],
+    "glAccounts": [
+      "8112",
+      "1310",
+      "3350",
+      "2420",
+      "8412",
+      "1320"
+    ],
+    "entities": [],
+    "drillsTo": [
+      "onec_validate_wip_closure"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_drill_unposted_documents",
+    "description": "Full list of unposted (Posted=false) documents of a specific type for a period. Returns every document with number, date, amount, GUID. Per-document instruction: how to post in 1C. Supported types: РеализацияТоваровУслуг, ПоступлениеТоваровУслуг, ПлатежноеПоручениеИсходящее, ПлатежноеПоручениеВходящее, НачислениеЗарплатыРаботникамОрганизаций, ОперацияБух. Use after onec_validate_period_close_readiness finds unposted documents. See kz-agro-validation-rules.md#A.4.",
+    "shortDescription": "Full list of unposted (Posted=false) documents of a specific type for a period.",
+    "domain": "validation-drilldown",
+    "verb": "drill",
+    "keywords": [
+      "fa",
+      "payroll",
+      "inventory",
+      "revenue",
+      "close",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_validate_period_close_readiness"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "hr",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_drill_unpaid_payments",
+    "description": "Full list of outgoing payment orders (ПлатежноеПоручениеИсходящее) that are posted (Posted=true) but not flagged as paid (Оплачено=false). Returns document number, date, amount, contractor name, GUID, age in days, and per-document instructions to confirm with bank and update Оплачено flag. Use after onec_validate_bank_balance_consistency finds unpaid payments. See kz-agro-validation-rules.md#A.6.",
+    "shortDescription": "Full list of outgoing payment orders (ПлатежноеПоручениеИсходящее) that are posted (Posted=true) but not flagged as paid (Оплачено=false).",
+    "domain": "validation-drilldown",
+    "verb": "drill",
+    "keywords": [
+      "bank",
+      "validate",
+      "drill"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_validate_bank_balance_consistency"
+    ],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_validate_double_entry",
+    "description": "Validate fundamental double-entry invariants: trial-balance totals (Σ Дт = Σ Кт for opening/turnover/closing) and optionally per-document. See kz-agro-validation-rules.md#A.1.",
+    "shortDescription": "Validate fundamental double-entry invariants: trial-balance totals (Σ Дт = Σ Кт for opening/turnover/closing) and optionally per-document.",
+    "domain": "validation-integrity",
+    "verb": "validate",
+    "keywords": [
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_validate_account_signs",
+    "description": "Flag atypical balances: credit balance on asset accounts, debit balance on liability accounts, and negative (red-storno) turnovers. Excludes known contra-accounts. See kz-agro-validation-rules.md#A.1.",
+    "shortDescription": "Flag atypical balances: credit balance on asset accounts, debit balance on liability accounts, and negative (red-storno) turnovers.",
+    "domain": "validation-integrity",
+    "verb": "validate",
+    "keywords": [
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_validate_balance_arithmetic",
+    "description": "Per-account arithmetic check: opening + turnover_Дт − turnover_Кт = closing. Failures indicate register corruption or unposted period transition. See kz-agro-validation-rules.md#A.1.",
+    "shortDescription": "Per-account arithmetic check: opening + turnover_Дт − turnover_Кт = closing.",
+    "domain": "validation-integrity",
+    "verb": "validate",
+    "keywords": [
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_validate_extdimension",
+    "description": "Check that accounts requiring sub-accounts (contractor / employee / nomenclature) actually have ExtDimension1 set. Flags orphan postings without proper analytics. See kz-agro-validation-rules.md#A.1.",
+    "shortDescription": "Check that accounts requiring sub-accounts (contractor / employee / nomenclature) actually have ExtDimension1 set.",
+    "domain": "validation-integrity",
+    "verb": "validate",
+    "keywords": [
+      "hr",
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_validate_period_close_readiness",
+    "description": "Pre-flight check before posting ЗакрытиеМесяца: unposted docs by type, depreciation accrual presence, existing month-close status. See kz-agro-validation-rules.md#A.4.",
+    "shortDescription": "Pre-flight check before posting ЗакрытиеМесяца: unposted docs by type, depreciation accrual presence, existing month-close status.",
+    "domain": "validation-period-close",
+    "verb": "validate",
+    "keywords": [
+      "close",
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_validate_accrual_alignment",
+    "description": "Verify accruals follow their bases: revenue requires VAT, salary requires ОПВ. Flags missing tax accruals proportional to underlying activity. See kz-agro-validation-rules.md#A.3.",
+    "shortDescription": "Verify accruals follow their bases: revenue requires VAT, salary requires ОПВ.",
+    "domain": "validation-period-close",
+    "verb": "validate",
+    "keywords": [
+      "vat",
+      "opv",
+      "payroll",
+      "revenue",
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "hr",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_validate_depreciation_completeness",
+    "description": "Check that depreciation (2420 credit turnover) was posted for the period if fixed assets exist (2410 balance > 0). Flags missing or suspiciously low depreciation. See kz-agro-validation-rules.md#A.4.",
+    "shortDescription": "Check that depreciation (2420 credit turnover) was posted for the period if fixed assets exist (2410 balance > 0).",
+    "domain": "validation-period-close",
+    "verb": "validate",
+    "keywords": [
+      "fa",
+      "validate"
+    ],
+    "glAccounts": [
+      "2420",
+      "2410"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_validate_wip_closure",
+    "description": "Seasonal validation of 8110/8112 (НЗП растениеводства): zero in winter, growing in spring, closing to 1320 during harvest, zero after. See kz-agro-validation-rules.md#A.3.",
+    "shortDescription": "Seasonal validation of 8110/8112 (НЗП растениеводства): zero in winter, growing in spring, closing to 1320 during harvest, zero after.",
+    "domain": "validation-period-close",
+    "verb": "validate",
+    "keywords": [
+      "inventory",
+      "expense",
+      "validate"
+    ],
+    "glAccounts": [
+      "8110",
+      "8112",
+      "1320"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_validate_cogs_basis",
+    "description": "Cross-check 7010 (Себестоимость, Дт) ≈ 1320 (Готовая продукция, Кт) for the period. Deviation means COGS not based on actual FG cost. See kz-agro-validation-rules.md#A.3.",
+    "shortDescription": "Cross-check 7010 (Себестоимость, Дт) ≈ 1320 (Готовая продукция, Кт) for the period.",
+    "domain": "validation-period-close",
+    "verb": "validate",
+    "keywords": [
+      "fa",
+      "inventory",
+      "cogs",
+      "validate"
+    ],
+    "glAccounts": [
+      "7010",
+      "1320"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_validate_invoice_payment_matching",
+    "description": "Summarize outstanding A/R (1210) and A/P (3310) with top-5 contractors per side. Highlights large totals for collection/payment follow-up. See kz-agro-validation-rules.md#A.6.",
+    "shortDescription": "Summarize outstanding A/R (1210) and A/P (3310) with top-5 contractors per side.",
+    "domain": "validation-reconciliation",
+    "verb": "validate",
+    "keywords": [
+      "ar",
+      "ap",
+      "validate"
+    ],
+    "glAccounts": [
+      "1210",
+      "3310"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_validate_contract_terms_compliance",
+    "description": "List expired contracts (СрокДействияПо < period end). Contracts past their validity should be renewed or marked inactive. See kz-agro-validation-rules.md#A.6.",
+    "shortDescription": "List expired contracts (СрокДействияПо < period end).",
+    "domain": "validation-reconciliation",
+    "verb": "validate",
+    "keywords": [
+      "audit",
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_validate_bank_balance_consistency",
+    "description": "Bank account 1030: closing balance ≥ 0 check + posted-but-unpaid outgoing payments (Posted=true, Оплачено=false). See kz-agro-validation-rules.md#A.6.",
+    "shortDescription": "Bank account 1030: closing balance ≥ 0 check + posted-but-unpaid outgoing payments (Posted=true, Оплачено=false).",
+    "domain": "validation-reconciliation",
+    "verb": "validate",
+    "keywords": [
+      "bank",
+      "validate"
+    ],
+    "glAccounts": [
+      "1030"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_validate_vat_charged_vs_revenue",
+    "description": "Check Σ 3131 (НДС начисленный, Кт) ≈ Σ 6010 (выручка нетто) × 12 % within ±1 %. In KZ 1C, 6010 holds net revenue and 3131 holds VAT separately — formula is × 12/100, NOT × 12/112. Flags missing VAT accruals or exempt-sale misclassification. See kz-agro-validation-rules.md#A.3.",
+    "shortDescription": "Check Σ 3131 (НДС начисленный, Кт) ≈ Σ 6010 (выручка нетто) × 12 % within ±1 %.",
+    "domain": "validation-tax",
+    "verb": "validate",
+    "keywords": [
+      "vat",
+      "payroll",
+      "revenue",
+      "validate"
+    ],
+    "glAccounts": [
+      "3131",
+      "6010"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "hr",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_validate_vat_recoverable_vs_purchases",
+    "description": "Check 1421 (НДС к возмещению, Дт) does not exceed 12/112 of purchases (3310 Кт turnover). Flags double-posting or wrong VAT rate. See kz-agro-validation-rules.md#A.3.",
+    "shortDescription": "Check 1421 (НДС к возмещению, Дт) does not exceed 12/112 of purchases (3310 Кт turnover).",
+    "domain": "validation-tax",
+    "verb": "validate",
+    "keywords": [
+      "vat",
+      "ap",
+      "validate"
+    ],
+    "glAccounts": [
+      "1421",
+      "3310"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_validate_esf_coverage",
+    "description": "Cross-check posted РеализацияТоваровУслуг vs InformationRegister_АктуальныеЭСФ — every sale must have a matching ЭСФ. See kz-agro-validation-rules.md#A.3.",
+    "shortDescription": "Cross-check posted РеализацияТоваровУслуг vs InformationRegister_АктуальныеЭСФ — every sale must have a matching ЭСФ.",
+    "domain": "validation-tax",
+    "verb": "validate",
+    "keywords": [
+      "vat",
+      "esf",
+      "inventory",
+      "revenue",
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [
+      "InformationRegister_АктуальныеЭСФ"
+    ],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor",
+      "controller",
+      "cfo"
+    ]
+  },
+  {
+    "name": "onec_validate_payroll_tax_rates",
+    "description": "Cross-check payroll-tax accruals against base × rate: ОПВ 10%, ОППВ 5%, СО 3.5%, ВОСМС 3%, ОСМС-раб 2%, ИПН 10% (with 14 МРП deduction), СН 9.5%−СО. Uses aggregate turnovers. See kz-agro-validation-rules.md#A.3.",
+    "shortDescription": "Cross-check payroll-tax accruals against base × rate: ОПВ 10%, ОППВ 5%, СО 3.5%, ВОСМС 3%, ОСМС-раб 2%, ИПН 10% (with 14 МРП deduction), СН 9.5%−СО.",
+    "domain": "validation-tax",
+    "verb": "validate",
+    "keywords": [
+      "fa",
+      "ipn",
+      "opv",
+      "so",
+      "vosms",
+      "sn",
+      "payroll",
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_validate_payroll_deductions",
+    "description": "Summarize НачислениеЗарплатыРаботникамОрганизаций and flag docs below МЗП (85 000 ₸) — possible part-time or data errors. Reports 2026 constants: МРП = 3 692 ₸, ИПН standard deduction = 14 × МРП = 51 688 ₸. See kz-agro-validation-rules.md#A.3.",
+    "shortDescription": "Summarize НачислениеЗарплатыРаботникамОрганизаций and flag docs below МЗП (85 000 ₸) — possible part-time or data errors.",
+    "domain": "validation-tax",
+    "verb": "validate",
+    "keywords": [
+      "ipn",
+      "payroll",
+      "validate"
+    ],
+    "glAccounts": [
+      "2026"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_validate_payroll_accrual_balance",
+    "description": "Reconcile 3350 (зарплата к выплате) credit turnover with sum of НачислениеЗарплаты СуммаДокумента for the period. Mismatch indicates lost or unposted payroll. See kz-agro-validation-rules.md#A.3.",
+    "shortDescription": "Reconcile 3350 (зарплата к выплате) credit turnover with sum of НачислениеЗарплаты СуммаДокумента for the period.",
+    "domain": "validation-tax",
+    "verb": "validate",
+    "keywords": [
+      "payroll",
+      "validate"
+    ],
+    "glAccounts": [
+      "3350"
+    ],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "accountant",
+      "auditor",
+      "hr"
+    ]
+  },
+  {
+    "name": "onec_validate",
+    "description": "Universal validation interface. Specify ruleId to check:\\n\\n",
+    "shortDescription": "Universal validation interface.",
+    "domain": "validation",
+    "verb": "validate",
+    "keywords": [
+      "validate"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [],
+    "persona": [
+      "auditor"
+    ]
+  },
+  {
+    "name": "onec_search_workflow_catalog",
+    "description": "Searches the 1C Kazakhstan Workflow Catalog — 117 document types, 171 registers, and 271 catalogs across 16 business domains. Use to discover OData entity names for a business concept before constructing queries. Examples: keyword='ОС' → Fixed Asset entities; keyword='НДС' → VAT documents; keyword='зарплат' → payroll. Returns: matching sections with OData entity names (Document_*, Catalog_*, InformationRegister_*, AccumulationRegister_*), domain label, and a brief excerpt. Drill: after finding an entity, call onec_get_entity_schema(entityName) to get its full OData field list.",
+    "shortDescription": "Searches the 1C Kazakhstan Workflow Catalog — 117 document types, 171 registers, and 271 catalogs across 16 business domains.",
+    "domain": "workflow-catalog",
+    "verb": "search",
+    "keywords": [
+      "fa",
+      "vat",
+      "payroll",
+      "drill",
+      "schema",
+      "workflow",
+      "related_party"
+    ],
+    "glAccounts": [],
+    "entities": [],
+    "drillsTo": [
+      "onec_get_entity_schema"
+    ],
+    "persona": [
+      "accountant",
+      "auditor",
+      "hr"
+    ]
+  }
+]

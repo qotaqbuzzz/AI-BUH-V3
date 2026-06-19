@@ -517,6 +517,33 @@ bot.on(message("text"), async (ctx) => {
         `⚙️ ${label}${toolsUsed.length > 3 ? ` (+${toolsUsed.length - 3} more)` : ""}`);
     });
 
+    // ── Provenance footer + conflict callout (Gap 9a + 9c) ──────────────────
+    let sourceFooter = "";
+    const answerTrail     = client.lastAnswerTrail;
+    const answerConflicts = client.lastAnswerConflicts;
+
+    if (answerTrail?.length > 0) {
+      const rec  = answerTrail[0];
+      const asOf = rec.asOf ? new Date(rec.asOf).toLocaleDateString("ru-KZ") : "";
+      sourceFooter = `\n\n<i>📊 Источник: ${escHtml(rec.toolName)} · ${rec.rowCount} строк · ${rec.durationMs}ms · ${escHtml(asOf)}</i>`;
+    }
+
+    // Gap 9c — conflict callout when two sources disagree on the same figure
+    if (answerConflicts?.length > 0) {
+      const lines = answerConflicts.map((c) => {
+        const srcs = (c.sources ?? [])
+          .map((s) => `  • ${escHtml(s.tool)}: ${Number(s.amount).toLocaleString("ru-KZ")} ${s.currency ?? "KZT"}`)
+          .join("\n");
+        const hyp = c.hypothesis ? `\n  💡 ${escHtml(c.hypothesis)}` : "";
+        return `⚠️ <b>Расхождение: ${escHtml(c.subject ?? "")}</b>\n${srcs}${hyp}`;
+      });
+      sourceFooter += "\n\n" + lines.join("\n\n");
+    }
+
+    if (answerTrail?.length > 0 || answerConflicts?.length > 0) {
+      client.clearLastAnswer();
+    }
+
     // ── Persist new messages to SQLite ───────────────────────────────────────
     appendHistory(tenant.id, userId, { role: "user",      content: userText });
     appendHistory(tenant.id, userId, { role: "assistant", content: answer   });
@@ -535,9 +562,16 @@ bot.on(message("text"), async (ctx) => {
     let hasTables = false;
     try {
       const segments = await renderSegments(answer);
-      for (const seg of segments) {
+      let footerSent = false;
+      for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i];
         if (seg.type === "text") {
-          if (seg.md.trim()) await sendLong(ctx, seg.md);
+          if (seg.md.trim()) {
+            // Attach source footer to the last text segment
+            const isLast = i === segments.length - 1;
+            await sendLong(ctx, seg.md + (isLast && sourceFooter ? sourceFooter : ""));
+            if (isLast) footerSent = true;
+          }
         } else if (seg.type === "png") {
           hasTables = true;
           await ctx.replyWithPhoto(
@@ -559,11 +593,15 @@ bot.on(message("text"), async (ctx) => {
           },
         }).catch(() => {});
       }
+      // If no text segment was last (e.g. ends with a PNG), send footer separately
+      if (sourceFooter && !footerSent) {
+        await ctx.replyWithHTML(sourceFooter.trim()).catch(() => {});
+      }
     } catch (renderErr) {
       // Python sidecar unavailable or failed — fall back to plain text
       const corrId = randomUUID().slice(0, 8);
       console.warn(`[bot] render fallback [${corrId}]:`, renderErr.message);
-      await sendLong(ctx, answer);
+      await sendLong(ctx, answer + sourceFooter);
     }
 
     if (toolsUsed.length > 0) {

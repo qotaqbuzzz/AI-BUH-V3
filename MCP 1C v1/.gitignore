@@ -3,9 +3,22 @@ dist/
 .env
 .env.local
 .mcp.json
+data/connections.json
+.claude/settings.local.json
 *.log
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
 *.tsbuildinfo
+
+# Compiled artifacts — packages use esbuild/tsx source aliases, never emit here
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.d.ts.map
+
+# Data dumps and one-off script output
+scripts/out_*.txt
+sales_report_*.json
+scan_results_*.json

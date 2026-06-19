@@ -43,21 +43,18 @@ The official Kazakhstan standard chart of accounts (Типовой план сч
 
 ## Architecture
 
+See **[STRUCTURE.md](./STRUCTURE.md)** for the full folder map.
+
 ```
 MCP 1C v1/
-├── apps/mcp/src/
-│   ├── index.ts          ← stdio transport entry point
-│   ├── server.ts         ← wires services → tools → McpServer
-│   ├── config.ts         ← env var loading
-│   └── tools/            ← 15 registerXxxTools() files
-│       ├── production.tools.ts   ← production/WIP/КПН (any industry)
-│       ├── accounts.tools.ts     ← kz_chart_* (static, no 1C)
-│       └── ...
-└── packages/
-    ├── kz-accounts/src/      ← AccountsService (JSON index, search)
-    ├── onec-client/src/      ← OData HTTP client (Basic Auth, retry)
-    └── services/src/         ← 14 business-logic services
-        └── ProductionService.ts ← universal (replaces AgroProductionService)
+├── apps/mcp/src/         ← MCP server (stdio + HTTP), 46 tool modules
+├── packages/             ← onec-client, services, kz-accounts
+├── Entities/             ← 889 offline 1C schema .md files
+├── docs/                 ← plan, workflows, dev notes (not runtime)
+├── data/                 ← connections.json (local secrets)
+├── scripts/              ← build-tool-registry.ts
+├── Dockerfile, fly.toml  ← deploy
+└── package.json          ← npm workspace root
 ```
 
 ## Universal vs Agro Features

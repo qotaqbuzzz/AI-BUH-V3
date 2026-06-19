@@ -1,0 +1,55 @@
+# Accounts receivable eval questions (дебиторская задолженность)
+# expected.type values:
+#   returns_value   — any non-zero numeric value in the answer
+#   no_error        — tool must not return isError:true
+#   amount          — exact amount within tolerance_pct (fill in after first live run)
+# must_cite_source: true → trail must have ≥1 ProvenanceRecord
+
+- id: AR-001
+  domain: receivables
+  question_ru: "Какая общая дебиторская задолженность на сегодня?"
+  question_en: "What is the total accounts receivable as of today?"
+  expected:
+    type: returns_value
+    currency: KZT
+  must_call: [onec_answer]
+  must_cite_source: true
+
+- id: AR-002
+  domain: receivables
+  question_ru: "Сколько нам должен Агросиндикат?"
+  question_en: "How much does Agrosyndicate owe us?"
+  expected:
+    type: returns_value
+    currency: KZT
+  must_call: [onec_answer]
+  must_cite_source: true
+  contractor_hint: "Агросиндикат"
+
+- id: AR-003
+  domain: receivables
+  question_ru: "Дебиторы на 01.06.2026"
+  question_en: "Accounts receivable as of 2026-06-01"
+  as_of_date: "2026-06-01"
+  expected:
+    type: no_error
+  must_call: [onec_answer]
+  must_cite_source: true
+
+- id: AR-004
+  domain: receivables
+  question_ru: "Кто должен больше всего?"
+  question_en: "Which contractor owes us the most?"
+  expected:
+    type: no_error
+  must_call: [onec_answer]
+  must_cite_source: true
+
+- id: AR-005
+  domain: receivables
+  question_ru: "Показать дебиторскую задолженность по счету 1210"
+  question_en: "Show receivables on account 1210"
+  expected:
+    type: no_error
+  must_call: [onec_answer]
+  must_cite_source: true

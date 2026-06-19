@@ -5,41 +5,6 @@ import { wrapError, ok, resolveOrg } from "./utils.js";
 
 export function registerRegisterTools(server: McpServer, reg: RegisterService): void {
   server.tool(
-    "onec_get_account_balance",
-    "Get debit/credit balance on any Kazakhstan chart-of-accounts code (e.g. '8110', '1310', '3310', '1210') from AccountingRegister_Типовой.",
-    {
-      accountCode: z.string().regex(/^\d{4}(\.\d{1,4})?$/, "Account code must be 4 digits with optional sub-account (e.g. '8110', '3310.01')").describe("Account code, e.g. '8110', '1310', '6010', '3310.01'"),
-      organizationGuid: z.string().optional().describe("Filter by organization Ref_Key"),
-      date: z.string().optional().describe("Balance as-of date YYYY-MM-DD (default: today)"),
-    },
-    async ({ accountCode, organizationGuid, date }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reg.getAccountBalance(accountCode, org.guid, date);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
-
-  server.tool(
-    "onec_get_accounting_turnovers",
-    "Get debit/credit turnovers for an account code over a date range from AccountingRegister_Типовой.",
-    {
-      accountCode: z.string().regex(/^\d{4}(\.\d{1,4})?$/, "Account code must be 4 digits with optional sub-account (e.g. '8110', '3310.01')").describe("Account code, e.g. '6010', '7010', '8110'"),
-      dateFrom: z.string().describe("Start date YYYY-MM-DD"),
-      dateTo: z.string().describe("End date YYYY-MM-DD"),
-      organizationGuid: z.string().optional(),
-    },
-    async ({ accountCode, dateFrom, dateTo, organizationGuid }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reg.getAccountTurnovers(accountCode, dateFrom, dateTo, org.guid);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
-
-  server.tool(
     "onec_get_exchange_rates",
     "Get current or historical exchange rates from InformationRegister_КурсыВалют (slice last). Fields: Курс, Кратность.",
     {

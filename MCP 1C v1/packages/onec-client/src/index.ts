@@ -1,4 +1,6 @@
 export { OneCClient, wrapGuid, buildQueryString } from "./OneCClient.js";
+export { CAPABILITIES, isODataAvailable, correctEntityName, getKnownIssues } from "./Capabilities.js";
+export type { EntityCapability } from "./Capabilities.js";
 export { escapeOData, validateAccountCode } from "./utils.js";
 export { OneCError, OneCAuthError, OneCForbiddenError, OneCNotFoundError, OneCServerError, OneCNetworkError, createOneCError } from "./errors.js";
 export * from "./types.js";

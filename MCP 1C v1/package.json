@@ -9,13 +9,16 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "esbuild apps/mcp/src/index.ts --bundle --platform=node --format=esm --outfile=dist/server.bundle.js --tsconfig=tsconfig.json --packages=external --alias:@aibos/services=./packages/services/src/index.ts --alias:@aibos/onec-client=./packages/onec-client/src/index.ts --alias:@aibos/kz-accounts=./packages/kz-accounts/src/index.ts && node -e \"const{cpSync,mkdirSync}=require('fs');mkdirSync('dist/data',{recursive:true});cpSync('packages/kz-accounts/src/data/chart.json','dist/data/chart.json')\"",
+    "build:registry": "tsx scripts/build-tool-registry.ts",
+    "build": "npm run build:registry && esbuild apps/mcp/src/index.ts --bundle --platform=node --format=esm --outfile=dist/server.bundle.js --tsconfig=tsconfig.json --packages=external --alias:@aibos/services=./packages/services/src/index.ts --alias:@aibos/onec-client=./packages/onec-client/src/index.ts --alias:@aibos/kz-accounts=./packages/kz-accounts/src/index.ts && node -e \"const{cpSync,mkdirSync,existsSync}=require('fs');mkdirSync('dist/data',{recursive:true});cpSync('packages/kz-accounts/src/data/chart.json','dist/data/chart.json');cpSync('apps/mcp/src/data/tool-registry.json','dist/data/tool-registry.json');cpSync('apps/mcp/src/data/workflows.json','dist/data/workflows.json');if(existsSync('apps/mcp/src/skills')){mkdirSync('dist/skills',{recursive:true});cpSync('apps/mcp/src/skills','dist/skills',{recursive:true});console.log('Copied skills/*.md')}\"",
     "build:tsc": "tsc -p tsconfig.build.json",
     "start": "node dist/server.bundle.js",
     "start:dev": "tsx apps/mcp/src/index.ts",
     "dev": "tsx --watch apps/mcp/src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test packages/services/src/**/*.test.ts"
+    "test": "tsx --test packages/services/src/**/*.test.ts",
+    "eval": "tsx evals/runner.ts",
+    "eval:dry": "tsx evals/runner.ts --dry-run"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
@@ -23,7 +26,9 @@
     "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.0.0",
+    "js-yaml": "^4.2.0",
     "tsx": "^4.19.0",
     "typescript": "^5.9.3"
   },

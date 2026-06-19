@@ -51,6 +51,10 @@ export class McpClient {
   #onExit;
   #ready = false;
   #stopping = false;
+  /** Trail from the most recent onec_answer call — read by bot.mjs for source line rendering. */
+  #lastAnswerTrail = null;
+  #lastAnswerValues = null;
+  #lastAnswerConflicts = null;
 
   /**
    * @param {string} serverDir  Absolute path to the MCP 1C v1 project root.
@@ -131,28 +135,44 @@ export class McpClient {
   }
 
   /**
-   * Tools hidden from the LLM because they are fully subsumed by a better tool.
-   * The server still registers them (DrillDownService uses getAccountCard internally),
-   * but the LLM never sees them — reducing wrong-tool-selection errors.
+   * Tiered allowlist (v2 Phase 2). Only primary + primitive tools are exposed to R1.
+   * Internal tools (~140) remain callable via onec_answer's orchestrator and onec_find_tool.
+   * Override with MCP_TOOL_VISIBILITY=all in .env to restore full list (e.g. for debugging).
    *
-   * Phase 1 (safe now):
-   *   onec_get_accounting_turnovers — fully covered by onec_analyze_account summary
-   *
-   * Phase 2 (after analyze_account adds gross Дт/Кт balance + qty):
-   *   onec_get_account_balance, onec_get_account_breakdown, onec_get_account_card
+   * Primary  — canonical entry-points:  onec_answer, onec_find_tool, onec_skill_lookup
+   * Primitive — R1 building blocks for multi-step reasoning (17 curated tools)
    */
-  static #TOOL_DENYLIST = new Set([
-    "onec_get_accounting_turnovers",
-    // Phase 2 — uncomment after Pillar 3.1 (parity additions) is shipped:
-    // "onec_get_account_balance",
-    // "onec_get_account_breakdown",
-    // "onec_get_account_card",
+  static #TOOL_ALLOWLIST = new Set([
+    // primary
+    "onec_answer",
+    "onec_find_tool",
+    "onec_skill_lookup",
+    // primitive
+    "onec_get_organizations",
+    "onec_search_contractors",
+    "onec_get_contractor",
+    "onec_get_contractor_settlements",
+    "onec_get_report",
+    "onec_get_cash_position",
+    "onec_get_account_breakdown",
+    "onec_analyze_account",
+    "onec_get_payroll_summary",
+    "onec_get_vat_register",
+    "onec_get_esf_status",
+    "onec_get_document",
+    "onec_resolve_guid",
+    "onec_get_exchange_rates",
+    "onec_get_financial_summary",
+    "onec_get_month_close_status",
+    "onec_drill_cash_by_account",
   ]);
 
-  /** MCP tools exposed to the LLM in OpenAI function-call format (denylist filtered out). */
+  static #TOOL_VISIBILITY = process.env.MCP_TOOL_VISIBILITY ?? "tiered";
+
+  /** MCP tools exposed to R1 in OpenAI function-call format (tiered allowlist by default). */
   get openaiTools() {
     return this.#tools
-      .filter((t) => !McpClient.#TOOL_DENYLIST.has(t.name))
+      .filter((t) => McpClient.#TOOL_VISIBILITY === "all" || McpClient.#TOOL_ALLOWLIST.has(t.name))
       .map((t) => ({
         type: "function",
         function: {
@@ -166,15 +186,34 @@ export class McpClient {
   /** Total registered tools on the server (before denylist filtering). */
   get toolCountRaw() { return this.#tools.length; }
 
-  /** Tools actually exposed to the LLM (after denylist filtering). */
-  get toolCount() { return this.#tools.filter((t) => !McpClient.#TOOL_DENYLIST.has(t.name)).length; }
+  /** Tools actually exposed to the LLM (after allowlist filtering). */
+  get toolCount() { return this.openaiTools.length; }
 
   get isReady()   { return this.#ready; }
+
+  get lastAnswerTrail()     { return this.#lastAnswerTrail; }
+  get lastAnswerValues()    { return this.#lastAnswerValues; }
+  get lastAnswerConflicts() { return this.#lastAnswerConflicts; }
+  clearLastAnswer() {
+    this.#lastAnswerTrail = null;
+    this.#lastAnswerValues = null;
+    this.#lastAnswerConflicts = null;
+  }
 
   async callTool(name, args) {
     const result = await this.#send("tools/call", { name, arguments: args });
     if (result?.content) {
-      return result.content.map((c) => c.text ?? JSON.stringify(c)).join("\n");
+      const text = result.content.map((c) => c.text ?? JSON.stringify(c)).join("\n");
+      // Side-channel: extract provenance trail from onec_answer for bot-side rendering
+      if (name === "onec_answer") {
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed?.trail)     this.#lastAnswerTrail     = parsed.trail;
+          if (parsed?.values)    this.#lastAnswerValues    = parsed.values;
+          if (parsed?.conflicts) this.#lastAnswerConflicts = parsed.conflicts;
+        } catch { /* non-JSON or error response — leave trail as-is */ }
+      }
+      return text;
     }
     return JSON.stringify(result);
   }

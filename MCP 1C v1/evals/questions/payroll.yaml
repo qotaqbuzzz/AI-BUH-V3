@@ -1,0 +1,45 @@
+# Payroll eval questions (зарплата)
+# Phase 1: onec_answer covers receivables/payables only.
+# Payroll questions included to measure coverage gap until Phase 2 adds the pattern.
+
+- id: PR-001
+  domain: payroll
+  question_ru: "Какова общая сумма начисленной зарплаты за май 2026?"
+  question_en: "What is the total payroll accrual for May 2026?"
+  as_of_date: "2026-05-31"
+  expected:
+    type: no_error
+  must_call: [onec_answer]
+  must_cite_source: false
+  note: "Phase 1 — payroll pattern not yet in AnswerComposer"
+
+- id: PR-002
+  domain: payroll
+  question_ru: "Сколько сотрудников получили зарплату в мае?"
+  question_en: "How many employees were paid in May 2026?"
+  as_of_date: "2026-05-31"
+  expected:
+    type: no_error
+  must_call: [onec_answer]
+  must_cite_source: false
+  note: "Phase 1"
+
+- id: PR-003
+  domain: payroll
+  question_ru: "Показать задолженность по зарплате"
+  question_en: "Show payroll liability balance"
+  expected:
+    type: no_error
+  must_call: [onec_answer]
+  must_cite_source: false
+  note: "Phase 1"
+
+- id: PR-004
+  domain: payroll
+  question_ru: "Начисления по ОПВ и ИПН за июнь 2026"
+  question_en: "OPV and IPN tax accruals for June 2026"
+  expected:
+    type: no_error
+  must_call: [onec_answer]
+  must_cite_source: false
+  note: "Phase 1"

@@ -1,259 +1,235 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { ReportsService } from "@aibos/services";
+import type { ReportsService, ProductionService, CostingService } from "@aibos/services";
 import { wrapError, ok, resolveOrg } from "./utils.js";
 
+const reportTypeEnum = z.enum([
+  // Financial reports
+  "osv",
+  "debtors",
+  "creditors",
+  "contractor-balance",
+  "payments-in",
+  "payments-out",
+  "purchases",
+  "sales",
+  "creditors-detailed",
+  "advances-received",
+  "liabilities-full",
+  "cash-flow",
+  "fixed-assets",
+  "payroll",
+  "anomalies",
+  // Production & inventory reports
+  "production-wip",
+  "production-materials",
+  "production-finished-goods",
+  "production-payroll-taxes",
+  "production-vat-register",
+  "production-pl-summary",
+  "production-kpn-estimate",
+  "inventory-stock",
+  "costing-unit-cost",
+  "costing-cogs-composition",
+  "costing-real-production-costs",
+]);
 
+type ReportType = z.infer<typeof reportTypeEnum>;
 
-export function registerReportsTools(server: McpServer, reports: ReportsService): void {
+const reportDescriptions: Record<ReportType, string> = {
+  "osv": "Trial balance (ОСВ) with opening/closing balances and turnovers by account",
+  "debtors": "All accounts receivable: accounts 1210, 1250, 1251, 1254, 1255",
+  "creditors": "All accounts payable: accounts 3310, 3350, 3387, 3390",
+  "contractor-balance": "Complete balance picture for one contractor across all accounts",
+  "payments-in": "Incoming bank payments (ПлатежноеПоручениеВходящее)",
+  "payments-out": "Outgoing bank payments (ПлатежноеПоручениеИсходящее)",
+  "purchases": "Detailed purchases report (ПоступлениеТоваровУслуг) with line detail",
+  "sales": "Detailed sales report (РеализацияТоваровУслуг) with line detail",
+  "creditors-detailed": "Creditors on 3310/3350/3387/3390 with payment history and age",
+  "advances-received": "Account 3510 (advances from buyers) with fulfillment tracking",
+  "liabilities-full": "COMPREHENSIVE report of all liability accounts and sections",
+  "cash-flow": "Cash flow summary by month: bank payments + cash register",
+  "fixed-assets": "Fixed assets (ОС): 2410 cost and 2420 depreciation per asset",
+  "payroll": "Payroll accrual documents (НачислениеЗарплатыРаботникамОрганизаций)",
+  "anomalies": "Anomalies: manual entries, round amounts ≥1M, unposted docs",
+  "production-wip": "Work-in-progress (НЗП) on account 8110 (Основное производство)",
+  "production-materials": "Raw materials & supplies (account 1310)",
+  "production-finished-goods": "Finished goods inventory (account 1320)",
+  "production-payroll-taxes": "KZ payroll tax registers (ОПВ, СО, ВОСМС, ИПН) for period",
+  "production-vat-register": "НДС register positions for period",
+  "production-pl-summary": "P&L summary: revenue (6010), COGS (7010), overhead (7210)",
+  "production-kpn-estimate": "КПН (corporate income tax) estimate with optional 70% agro reduction",
+  "inventory-stock": "Full inventory stock report: quantity by warehouse, cost, supplier, procurement price",
+  "costing-unit-cost": "Per-nomenclature unit cost: production cost, COGS, weighted average",
+  "costing-cogs-composition": "COGS breakdown by cost category with sample source documents",
+  "costing-real-production-costs": "Real production costs excluding WIP ping-pong inflation",
+};
+
+export function registerReportsTools(server: McpServer, reports: ReportsService, production: ProductionService, costing: CostingService): void {
   server.tool(
-    "onec_get_osv",
-    "Get full ОСВ (оборотно-сальдовая ведомость / trial balance) for a period from AccountingRegister_Типовой/BalanceAndTurnovers. Returns opening/closing balances and turnovers grouped by account code, plus column totals.",
+    "onec_get_report",
+    [
+      "Unified financial reports interface. Specify reportType to get:",
+      Object.entries(reportDescriptions)
+        .map(([type, desc]) => `  • ${type}: ${desc}`)
+        .join("\n"),
+    ].join("\n"),
     {
-      dateFrom: z.string().describe("Start date YYYY-MM-DD"),
-      dateTo: z.string().describe("End date YYYY-MM-DD"),
-      organizationGuid: z.string().uuid().optional().describe("Filter by organization Ref_Key"),
-    },
-    async ({ dateFrom, dateTo, organizationGuid }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reports.getOSV(dateFrom, dateTo, org.guid);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
-
-  server.tool(
-    "onec_get_all_debtors",
-    "Get all accounts receivable and advances paid: accounts 1210, 1250, 1251, 1254, 1255. Returns rows per contractor with balances and a total. Includes breakdown by account.",
-    {
-      organizationGuid: z.string().uuid().optional(),
-      date: z.string().optional().describe("As-of date YYYY-MM-DD (omit for current balance)"),
-    },
-    async ({ organizationGuid, date }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reports.getAllDebtors(org.guid, date);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
-
-  server.tool(
-    "onec_get_all_creditors",
-    "Get all accounts payable: accounts 3310 (suppliers), 3350 (payroll), 3387, 3390. Returns rows per contractor with balances and a total. Includes breakdown by account.",
-    {
-      organizationGuid: z.string().uuid().optional(),
-      date: z.string().optional().describe("As-of date YYYY-MM-DD (omit for current balance)"),
-    },
-    async ({ organizationGuid, date }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reports.getAllCreditors(org.guid, date);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
-
-  server.tool(
-    "onec_get_contractor_balance",
-    "Get complete balance picture for a contractor across ALL accounting accounts. Shows every account where the contractor appears as a dimension (ExtDimension): receivables (1210), payables (3310), advances received (3510), advances paid (1310), etc. Essential for understanding full mutual obligations with any counterparty.",
-    {
-      contractorGuid: z.string().uuid().describe("Contractor Ref_Key"),
-      date: z.string().optional().describe("As-of date YYYY-MM-DD (omit for current balance)"),
-    },
-    async ({ contractorGuid, date }) => {
-      try {
-        const result = await reports.getContractorBalance(contractorGuid, date);
-        return ok(result);
-      } catch (e) { return wrapError(e); }
-    },
-  );
-
-  server.tool(
-    "onec_get_payments_in",
-    "Get incoming bank payments (ПлатежноеПоручениеВходящее) for a period. Returns list of payments with date, number, contractor, currency, amount and payment purpose. Totals grouped by currency. Optionally filter by contractor or organization.",
-    {
-      dateFrom: z.string().describe("YYYY-MM-DD"),
-      dateTo: z.string().describe("YYYY-MM-DD"),
+      reportType: reportTypeEnum.describe("Type of report to retrieve"),
+      dateFrom: z.string().optional().describe("Start date YYYY-MM-DD (required for date-range reports)"),
+      dateTo: z.string().optional().describe("End date YYYY-MM-DD (required for date-range reports)"),
+      date: z.string().optional().describe("As-of date YYYY-MM-DD (used for balance reports; defaults to today)"),
       contractorGuid: z.string().uuid().optional().describe("Filter by contractor Ref_Key"),
-      organizationGuid: z.string().uuid().optional(),
-    },
-    async ({ dateFrom, dateTo, contractorGuid, organizationGuid }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reports.getIncomingPayments(dateFrom, dateTo, contractorGuid, org.guid);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
-
-  server.tool(
-    "onec_get_payments_out",
-    "Get outgoing bank payments (ПлатежноеПоручениеИсходящее) for a period — payments to suppliers and contractors. Returns list with date, number, contractor, currency, amount and payment purpose. Totals grouped by currency.",
-    {
-      dateFrom: z.string().describe("YYYY-MM-DD"),
-      dateTo: z.string().describe("YYYY-MM-DD"),
-      contractorGuid: z.string().uuid().optional().describe("Filter by contractor Ref_Key"),
-      organizationGuid: z.string().uuid().optional(),
-    },
-    async ({ dateFrom, dateTo, contractorGuid, organizationGuid }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reports.getOutgoingPayments(dateFrom, dateTo, contractorGuid, org.guid);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
-
-  server.tool(
-    "onec_get_purchases_report",
-    "Get detailed purchases report (ПоступлениеТоваровУслуг) with line-level detail: contractor, contract, currency, nomenclature, quantity, price, amount, VAT. Mirrors sales report structure. Optionally filter by contractor or organization.",
-    {
-      dateFrom: z.string().describe("YYYY-MM-DD"),
-      dateTo: z.string().describe("YYYY-MM-DD"),
-      contractorGuid: z.string().uuid().optional(),
-      organizationGuid: z.string().uuid().optional(),
-    },
-    async ({ dateFrom, dateTo, contractorGuid, organizationGuid }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reports.getPurchasesReport(dateFrom, dateTo, contractorGuid, org.guid);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
-
-  server.tool(
-    "onec_get_creditors_detailed",
-    "Detailed creditors report: for each creditor on accounts 3310/3350/3387/3390 shows balance, first document date, contracts, total payments made in 2024–2026, last payment date/purpose, age category, and obligation type. Sorted by balance descending.",
-    {
       organizationGuid: z.string().uuid().optional().describe("Filter by organization Ref_Key"),
-      date: z.string().optional().describe("As-of date YYYY-MM-DD (omit for current)"),
+      nomenclatureGuid: z.string().uuid().optional().describe("Filter by nomenclature (for costing-unit-cost)"),
+      warehouseGuid: z.string().uuid().optional().describe("Filter by warehouse (for inventory-stock)"),
+      isAgro: z.boolean().optional().default(false).describe("Apply 70% КПН reduction (for production-kpn-estimate)"),
+      hasDeductions: z.boolean().optional().default(true).describe("Apply standard deductions for payroll tax calc"),
+      grossSalary: z.number().optional().describe("Gross salary in tenge (for payroll tax calculation)"),
+      perCategoryDocLimit: z.number().int().optional().default(10).describe("Max docs per cost category"),
+      perDocumentSampleLimit: z.number().int().optional().default(0).describe("Sample size for per-document checks"),
+      productionAccountCode: z.string().optional().default("8112").describe("Production account (KZ: 8112)"),
+      wipAccountCode: z.string().optional().default("1341").describe("WIP account (KZ: 1341)"),
+      finishedGoodsAccountCode: z.string().optional().default("1320").describe("Finished goods account (KZ: 1320)"),
     },
-    async ({ organizationGuid, date }) => {
+    async (params) => {
       try {
+        const {
+          reportType,
+          dateFrom,
+          dateTo,
+          date,
+          contractorGuid,
+          organizationGuid,
+          nomenclatureGuid,
+          warehouseGuid,
+          isAgro,
+          hasDeductions,
+          grossSalary,
+          perCategoryDocLimit,
+          perDocumentSampleLimit,
+          productionAccountCode,
+          wipAccountCode,
+          finishedGoodsAccountCode,
+        } = params;
         const org = resolveOrg(organizationGuid);
-        const result = await reports.getDetailedCreditors(org.guid, date);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
+        let result: unknown;
 
-  server.tool(
-    "onec_get_advances_received_detailed",
-    "Detailed breakdown of account 3510 (advances received from buyers): per-contractor balance, first payment date, contract names, total shipments fulfilled (РеализацияТоваровУслуг), last shipment date, and age category. These are obligations to deliver goods — highest-priority liability. Sorted by balance descending.",
-    {
-      organizationGuid: z.string().uuid().optional().describe("Filter by organization Ref_Key"),
-      date: z.string().optional().describe("As-of date YYYY-MM-DD (omit for current)"),
-    },
-    async ({ organizationGuid, date }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reports.getDetailedAdvancesReceived(org.guid, date);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
+        switch (reportType) {
+          // Financial reports
+          case "osv":
+            if (!dateFrom || !dateTo) throw new Error("osv requires dateFrom and dateTo");
+            result = await reports.getOSV(dateFrom, dateTo, org.guid);
+            break;
+          case "debtors":
+            result = await reports.getAllDebtors(org.guid, date);
+            break;
+          case "creditors":
+            result = await reports.getAllCreditors(org.guid, date);
+            break;
+          case "contractor-balance":
+            if (!contractorGuid) throw new Error("contractor-balance requires contractorGuid");
+            result = await reports.getContractorBalance(contractorGuid, date);
+            break;
+          case "payments-in":
+            if (!dateFrom || !dateTo) throw new Error("payments-in requires dateFrom and dateTo");
+            result = await reports.getIncomingPayments(dateFrom, dateTo, contractorGuid, org.guid);
+            break;
+          case "payments-out":
+            if (!dateFrom || !dateTo) throw new Error("payments-out requires dateFrom and dateTo");
+            result = await reports.getOutgoingPayments(dateFrom, dateTo, contractorGuid, org.guid);
+            break;
+          case "purchases":
+            if (!dateFrom || !dateTo) throw new Error("purchases requires dateFrom and dateTo");
+            result = await reports.getPurchasesReport(dateFrom, dateTo, contractorGuid, org.guid);
+            break;
+          case "sales":
+            if (!dateFrom || !dateTo) throw new Error("sales requires dateFrom and dateTo");
+            result = await reports.getSalesReport(dateFrom, dateTo, contractorGuid, org.guid);
+            break;
+          case "creditors-detailed":
+            result = await reports.getDetailedCreditors(org.guid, date);
+            break;
+          case "advances-received":
+            result = await reports.getDetailedAdvancesReceived(org.guid, date);
+            break;
+          case "liabilities-full":
+            result = await reports.getFullLiabilitiesReport(org.guid, date);
+            break;
+          case "cash-flow":
+            if (!dateFrom || !dateTo) throw new Error("cash-flow requires dateFrom and dateTo");
+            result = await reports.getCashFlowSummary(dateFrom, dateTo, org.guid);
+            break;
+          case "fixed-assets":
+            result = await reports.getFixedAssets(org.guid, date);
+            break;
+          case "payroll":
+            if (!dateFrom || !dateTo) throw new Error("payroll requires dateFrom and dateTo");
+            result = await reports.getPayrollDocuments(dateFrom, dateTo, org.guid);
+            break;
+          case "anomalies":
+            if (!dateFrom || !dateTo) throw new Error("anomalies requires dateFrom and dateTo");
+            result = await reports.detectAnomalies(dateFrom, dateTo, org.guid);
+            break;
 
-  server.tool(
-    "onec_get_full_liabilities_report",
-    "COMPREHENSIVE liabilities report covering ALL liability accounts: (1) advances received 3510 with per-contractor detail, (2) supplier payables 3310/3350/3387/3390 with contract/payment history, (3) tax liabilities 3120/3131/3150/3211-3250/4310, (4) other liabilities 3386/3430/4110, (5) OSV snapshot of all Cr-balance accounts. Grand total across all sections. Use this as the master view of all company obligations.",
-    {
-      organizationGuid: z.string().uuid().optional().describe("Filter by organization Ref_Key"),
-      date: z.string().optional().describe("As-of date YYYY-MM-DD (omit for current)"),
-    },
-    async ({ organizationGuid, date }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reports.getFullLiabilitiesReport(org.guid, date);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
+          // Production & inventory reports
+          case "production-wip":
+            result = await production.getProductionCosts(org.guid, date);
+            break;
+          case "production-materials":
+            result = await production.getMaterialsBalance(org.guid, date, nomenclatureGuid);
+            break;
+          case "production-finished-goods":
+            result = await production.getFinishedGoodsBalance(org.guid, date);
+            break;
+          case "production-payroll-taxes":
+            if (!dateFrom || !dateTo) throw new Error("production-payroll-taxes requires dateFrom and dateTo");
+            result = await production.getPayrollTaxesSummary(org.guid, dateFrom, dateTo);
+            break;
+          case "production-vat-register":
+            if (!dateFrom || !dateTo) throw new Error("production-vat-register requires dateFrom and dateTo");
+            result = await production.getVatRegister(org.guid, dateFrom, dateTo);
+            break;
+          case "production-pl-summary":
+            if (!dateFrom || !dateTo) throw new Error("production-pl-summary requires dateFrom and dateTo");
+            result = await production.getPLSummary(org.guid, dateFrom, dateTo);
+            break;
+          case "production-kpn-estimate":
+            if (!dateFrom || !dateTo) throw new Error("production-kpn-estimate requires dateFrom and dateTo");
+            result = await production.getKPNEstimate(org.guid, dateFrom, dateTo, isAgro ?? false);
+            break;
+          case "inventory-stock":
+            result = await reports.getStockReport(org.guid, date, warehouseGuid, dateFrom);
+            break;
+          case "costing-unit-cost":
+            if (!nomenclatureGuid) throw new Error("costing-unit-cost requires nomenclatureGuid");
+            if (!dateFrom || !dateTo) throw new Error("costing-unit-cost requires dateFrom and dateTo");
+            result = await costing.getNomenclatureUnitCost(nomenclatureGuid, dateFrom, dateTo, org.guid);
+            break;
+          case "costing-cogs-composition":
+            if (!dateFrom || !dateTo) throw new Error("costing-cogs-composition requires dateFrom and dateTo");
+            result = await costing.getCOGSCompositionWithDocs(dateFrom, dateTo, org.guid, perCategoryDocLimit ?? 10);
+            break;
+          case "costing-real-production-costs":
+            if (!dateFrom || !dateTo) throw new Error("costing-real-production-costs requires dateFrom and dateTo");
+            result = await costing.getRealProductionCosts(
+              dateFrom,
+              dateTo,
+              org.guid,
+              productionAccountCode ?? "8112",
+              wipAccountCode ?? "1341",
+              finishedGoodsAccountCode ?? "1320",
+            );
+            break;
 
-  server.tool(
-    "onec_get_sales_report",
-    "Get detailed sales report (РеализацияТоваровУслуг) with line-level detail: contractor, contract, currency, nomenclature, quantity, price, amount, VAT. Mirrors purchases report structure. Optionally filter by contractor or organization.",
-    {
-      dateFrom: z.string().describe("YYYY-MM-DD"),
-      dateTo: z.string().describe("YYYY-MM-DD"),
-      contractorGuid: z.string().uuid().optional(),
-      organizationGuid: z.string().uuid().optional(),
-    },
-    async ({ dateFrom, dateTo, contractorGuid, organizationGuid }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reports.getSalesReport(dateFrom, dateTo, contractorGuid, org.guid);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
+          default:
+            throw new Error(`Unknown report type: ${reportType}`);
+        }
 
-  server.tool(
-    "onec_get_cash_flow",
-    "Get cash flow summary for a period: bank payments in/out (ПлатежноеПоручение) + cash register in/out (КассовыйОрдер). Returns net cash flow by month and totals by document type.",
-    {
-      dateFrom: z.string().describe("YYYY-MM-DD"),
-      dateTo: z.string().describe("YYYY-MM-DD"),
-      organizationGuid: z.string().uuid().optional(),
-    },
-    async ({ dateFrom, dateTo, organizationGuid }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reports.getCashFlowSummary(dateFrom, dateTo, org.guid);
         return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
-
-  server.tool(
-    "onec_get_fixed_assets",
-    "Get fixed assets register (ОС): accounts 2410 (initial cost) and 2420 (accumulated depreciation). Returns per-asset initial cost, accumulated depreciation, and residual (book) value. Covers tractors, combines, vehicles, and other capital equipment.",
-    {
-      organizationGuid: z.string().uuid().optional(),
-      date: z.string().optional().describe("As-of date YYYY-MM-DD (default: today)"),
-    },
-    async ({ organizationGuid, date }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reports.getFixedAssets(org.guid, date);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
-
-  server.tool(
-    "onec_get_payroll_documents",
-    "Get payroll accrual documents (НачислениеЗарплатыРаботникамОрганизаций) for a period. Returns per-document summary with employee breakdown: name, accrual type, amount. Use to verify salary calculations and headcount.",
-    {
-      dateFrom: z.string().describe("YYYY-MM-DD"),
-      dateTo: z.string().describe("YYYY-MM-DD"),
-      organizationGuid: z.string().uuid().optional(),
-    },
-    async ({ dateFrom, dateTo, organizationGuid }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reports.getPayrollDocuments(dateFrom, dateTo, org.guid);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
-    },
-  );
-
-  server.tool(
-    "onec_detect_anomalies",
-    "Detect accounting anomalies for a period: (1) manual ОперацияБух entries — always require review, (2) suspiciously round amounts ≥1M divisible by 1M, (3) unposted documents that may affect period reporting.",
-    {
-      dateFrom: z.string().describe("YYYY-MM-DD"),
-      dateTo: z.string().describe("YYYY-MM-DD"),
-      organizationGuid: z.string().uuid().optional(),
-    },
-    async ({ dateFrom, dateTo, organizationGuid }) => {
-      try {
-        const org = resolveOrg(organizationGuid);
-        const result = await reports.detectAnomalies(dateFrom, dateTo, org.guid);
-        return ok(result, { orgGuid: org.guid, orgGuidCorrected: org.corrected || undefined });
-      } catch (e) { return wrapError(e); }
+      } catch (e) {
+        return wrapError(e);
+      }
     },
   );
 }

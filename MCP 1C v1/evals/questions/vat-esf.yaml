@@ -1,0 +1,43 @@
+# VAT / ESF eval questions (НДС / ЭСФ)
+# Phase 1: these fall outside onec_answer's current patterns. Included for coverage tracking.
+
+- id: VAT-001
+  domain: vat-esf
+  question_ru: "Какова сумма НДС к уплате за 2 квартал 2026?"
+  question_en: "What is the VAT payable for Q2 2026?"
+  expected:
+    type: no_error
+  must_call: [onec_answer]
+  must_cite_source: false
+  note: "Phase 1 — VAT pattern not yet in AnswerComposer"
+
+- id: VAT-002
+  domain: vat-esf
+  question_ru: "Сколько ЭСФ выставлено за июнь 2026?"
+  question_en: "How many ESF (electronic invoices) were issued in June 2026?"
+  expected:
+    type: no_error
+  must_call: [onec_answer]
+  must_cite_source: false
+  note: "Phase 1"
+
+- id: VAT-003
+  domain: vat-esf
+  question_ru: "НДС к зачёту за май 2026"
+  question_en: "Input VAT (НДС к зачёту) for May 2026"
+  as_of_date: "2026-05-31"
+  expected:
+    type: no_error
+  must_call: [onec_answer]
+  must_cite_source: false
+  note: "Phase 1"
+
+- id: VAT-004
+  domain: vat-esf
+  question_ru: "Показать реестр ЭСФ за последний квартал"
+  question_en: "Show ESF register for last quarter"
+  expected:
+    type: no_error
+  must_call: [onec_answer]
+  must_cite_source: false
+  note: "Phase 1"

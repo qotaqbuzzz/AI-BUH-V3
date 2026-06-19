@@ -1,0 +1,34 @@
+[
+  {
+    "id": "AR-debtors-vs-contractor-balance",
+    "subject": "дебиторская задолженность контрагента",
+    "toolA": "onec_debtors_report",
+    "toolB": "onec_contractor_balance",
+    "tolerancePct": 1,
+    "hypothesis": "Возможно, в одном источнике зачтены авансы выданные (1610), а в другом — нет."
+  },
+  {
+    "id": "AP-creditors-vs-contractor-balance",
+    "subject": "кредиторская задолженность контрагента",
+    "toolA": "onec_creditors_report",
+    "toolB": "onec_contractor_balance",
+    "tolerancePct": 1,
+    "hypothesis": "Возможно, в одном источнике зачтены авансы полученные (3510), а в другом — нет."
+  },
+  {
+    "id": "cash-register-vs-accounting",
+    "subject": "остаток денежных средств",
+    "toolA": "onec_get_cash_position",
+    "toolB": "onec_analyze_account:1010",
+    "tolerancePct": 0.1,
+    "hypothesis": "Расхождение указывает на непроведённые кассовые ордера."
+  },
+  {
+    "id": "payroll-accrual-vs-accounting",
+    "subject": "начисленная зарплата",
+    "toolA": "onec_get_payroll_summary",
+    "toolB": "onec_analyze_account:3350",
+    "tolerancePct": 1,
+    "hypothesis": "Расхождение может быть вызвано незакрытыми документами начисления или ручными корректировками."
+  }
+]

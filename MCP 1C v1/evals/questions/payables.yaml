@@ -1,0 +1,40 @@
+# Accounts payable eval questions (кредиторская задолженность)
+
+- id: AP-001
+  domain: payables
+  question_ru: "Какая общая кредиторская задолженность на сегодня?"
+  question_en: "What is the total accounts payable as of today?"
+  expected:
+    type: returns_value
+    currency: KZT
+  must_call: [onec_answer]
+  must_cite_source: true
+
+- id: AP-002
+  domain: payables
+  question_ru: "Кредиторская задолженность на 01.06.2026"
+  question_en: "Accounts payable as of 2026-06-01"
+  as_of_date: "2026-06-01"
+  expected:
+    type: no_error
+  must_call: [onec_answer]
+  must_cite_source: true
+
+- id: AP-003
+  domain: payables
+  question_ru: "Сколько мы должны поставщикам?"
+  question_en: "How much do we owe to suppliers?"
+  expected:
+    type: returns_value
+    currency: KZT
+  must_call: [onec_answer]
+  must_cite_source: true
+
+- id: AP-004
+  domain: payables
+  question_ru: "Мы должны кредиторам больше, чем должны нам дебиторы?"
+  question_en: "Do we owe more to creditors than debtors owe us?"
+  expected:
+    type: no_error
+  must_call: [onec_answer]
+  must_cite_source: true

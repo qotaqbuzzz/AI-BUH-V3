@@ -1,6 +1,6 @@
 CODEBASE.md — onec-kz MCP + DeepSeek Agent
 
-> Full codebase reference generated 2026-06-06. Every source file read in full.
+> Full codebase reference generated 2026-06-06. Updated 2026-06-16: HTTP transport migration, Telegram admin bot, named connections, chat agent, Fly.io deployment.
 
 ---
 
@@ -45,17 +45,23 @@ The system works universally for **any Kazakhstan industry** (agro, manufacturin
 MCP metadata/
 ├── MCP 1C v1/                    # TypeScript MCP server (monorepo)
 │   ├── apps/mcp/src/
-│   │   ├── index.ts              # Bootstrap: stdio transport
+│   │   ├── http-index.ts         # HTTP entry: POST/GET/DELETE /mcp, GET /health
+│   │   ├── telegram-bot.ts       # Admin bot: long-poll, connection wizard, /add /list /remove
+│   │   ├── chat-agent.ts         # Conversational LLM agent (OpenAI-compat + 7 tools)
+│   │   ├── connections-store.ts  # Named 1C connections registry (connections.json, 0o600)
+│   │   ├── session-registry.ts   # Per-session cache: getOrCreateSession()
 │   │   ├── server.ts             # createServer(): DI, tool registration, resources
-│   │   ├── config.ts             # loadConfig(): .env → AppConfig
+│   │   ├── config.ts             # loadConfigFromRequest() + loadConfigFromConnectionEntry()
 │   │   ├── org-context.ts        # buildOrgContext(): server-side org GUID resolution
-│   │   └── tools/                # 33 registerXyz() modules
+│   │   └── tools/                # ~33 registerXyz() modules
 │   ├── packages/
 │   │   ├── onec-client/          # HTTP OData client
 │   │   ├── services/             # Business logic (25 service classes)
 │   │   └── kz-accounts/          # Offline KZ chart of accounts
 │   ├── Entities/                 # 889 .md files — offline OData schema
-│   ├── dist/server.bundle.js     # esbuild bundle (runtime entry)
+│   ├── dist/http-server.bundle.mjs  # esbuild ESM bundle (runtime entry, with createRequire banner)
+│   ├── Dockerfile                # Multi-stage build → non-root mcp user, /app/data writable
+│   ├── fly.toml                  # Fly.io config (app: ai-buh-v3, region: ams, port: 3000)
 │   └── package.json              # Workspace root
 │
 ├── agent-deepseek/               # JavaScript agent + Telegram bot
@@ -102,25 +108,81 @@ workspaces: ["apps/*", "packages/*"]
 
 ## 4. MCP Server Core
 
-### `apps/mcp/src/index.ts`
+### `apps/mcp/src/http-index.ts` *(primary entry — replaces stdio index.ts)*
 
-6 lines. Bootstraps stdio transport:
+HTTP server on `PORT` (default 3000). Routes:
+- `GET  /health` → `{ status: "ok", sessions: N }`
+- `POST /mcp`    → new session (if no `mcp-session-id` header) or existing session
+- `GET  /mcp`    → SSE stream for server-to-client notifications
+- `DELETE /mcp`  → explicit session termination
+
+**New session auth** — pick one method:
+```
+X-Connection-Name: <name>          ← preferred: admin-registered via Telegram bot
+  — OR —
+Authorization: Basic <b64>         ← raw 1C credentials
+X-OnecUrl: https://your-1c/base
+X-OnecDefaultOrgGuid: <guid>       ← optional
+```
+
+Subsequent requests include `mcp-session-id: <uuid>` returned on first response.
+
+### `apps/mcp/src/connections-store.ts`
+
+Persists named 1C connections to `CONNECTIONS_FILE` (default `./data/connections.json`) at file mode `0o600`.
+
 ```typescript
-const server = await createServer();
-const transport = new StdioServerTransport();
-await server.connect(transport);
+addConnection(entry: ConnectionEntry): void   // writes/updates JSON
+removeConnection(name: string): boolean
+getConnection(name: string): ConnectionEntry | undefined
+listConnections(): ConnectionEntry[]
+
+interface ConnectionEntry { name: string; baseUrl: string; username: string; password: string; }
+```
+
+### `apps/mcp/src/telegram-bot.ts`
+
+Long-poll admin bot. **Restricted to a single `ADMIN_CHAT_ID`**.
+
+Commands: `/add [name url user pass]` · `/list` · `/remove <name>` · `/cancel` · `/start` · `/help`
+
+Guided 4-step wizard: name → url → username → password → review → confirm. Pending entries held server-side (passwords exceed Telegram's 64-byte `callback_data` limit). URL auto-gets `/odata/standard.odata` appended if missing.
+
+Inline keyboard: `➕ Add Connection`, `📋 List Connections`, `🗑 Remove <name>` buttons.
+
+Starts via `startAdminBot()` called from `http-index.ts` on server boot (no-ops if `ADMIN_BOT_TOKEN`/`ADMIN_CHAT_ID` not set).
+
+### `apps/mcp/src/chat-agent.ts`
+
+Conversational accounting assistant embedded in the MCP server. Provider-agnostic: uses `LLM_BASE_URL` + `LLM_API_KEY` + `LLM_MODEL`, falls back to `ANTHROPIC_API_KEY` → `claude-sonnet-4-6`.
+
+7 tools (OpenAI function-call format): `list_organizations`, `get_osv`, `get_account_balance`, `get_account_turnovers`, `list_documents`, `search_contractors`, `get_contractor_settlements`.
+
+- Per-chat history: `MAX_HISTORY = 10` exchange pairs (older pairs trimmed)
+- Tool loop: max 6 iterations
+- System prompt: replies strictly in Russian, formats numbers with space separators (1 234 567), calls `list_organizations` first if org GUID needed
+
+```typescript
+export async function chat(chatId: number, userMessage: string, connection: ConnectionEntry): Promise<string>
+export function clearHistory(chatId: number): void
+```
+
+### `apps/mcp/src/session-registry.ts`
+
+```typescript
+getOrCreateSession(id, config, transportFactory): Promise<Session>
+deleteSession(id: string): void
+getSessionCount(): number
 ```
 
 ### `apps/mcp/src/config.ts`
 
-**`loadConfig(): AppConfig`** — reads env, validates, returns config.
+Two loaders (replaces the old single `loadConfig()`):
 
-- `ONEC_BASE_URL` (required) — auto-appends `/odata/standard.odata` if missing
-- **Security**: enforces HTTPS unless `ONEC_ALLOW_HTTP=true`
-- Defaults: `ONEC_TIMEOUT_MS=30000`, `ONEC_MAX_RETRIES=3`
-- Optional: `DOCFLOW_*` credentials for external docflow integration
-- Optional: `ONEC_DEFAULT_ORG_GUID` for multi-org databases
-- Optional: `ENTITIES_DIR` for offline schema path
+- **`loadConfigFromRequest(authorization?, onecUrl?, defaultOrgGuid?)`** — decodes Basic auth header, validates HTTPS, builds `AppConfig`
+- **`loadConfigFromConnectionEntry(entry: ConnectionEntry)`** — builds `AppConfig` from a named connection
+
+Both enforce HTTPS unless `ONEC_ALLOW_HTTP=true`. Defaults: `ONEC_TIMEOUT_MS=30000`, `ONEC_MAX_RETRIES=3`.
 
 ### `apps/mcp/src/org-context.ts`
 
@@ -975,13 +1037,20 @@ The `onec_analyze_account` tool description instructs the LLM: **if risks[] is n
 ## 14. Build & Scripts
 
 ```bash
-# MCP Server
-npm run build        # esbuild bundle → dist/server.bundle.js + copy chart.json
-npm run start        # node dist/server.bundle.js
+# MCP Server (HTTP mode — production)
+npm run build        # esbuild → dist/http-server.bundle.mjs + copy chart.json
+node dist/http-server.bundle.mjs   # start HTTP server on PORT (default 3000)
 npm run dev          # tsx --watch (hot reload)
 npm run typecheck    # tsc --noEmit
 
-# Agent/Bot
+# Docker build & run
+docker build -t ai-buh .
+docker run -p 3000:3000 --env-file .env ai-buh
+
+# Fly.io deploy
+fly deploy           # builds image, deploys to ai-buh-v3 (ams region, 512MB)
+
+# Agent/Bot (DeepSeek layer)
 node agent.mjs                      # Interactive CLI
 node agent.mjs --once "query"       # One-shot
 node bot.mjs                        # Telegram bot
@@ -996,15 +1065,22 @@ node onboard.mjs --company ... --url ... --user ... --pass ... --telegram ...
 @aibos/kz-accounts → ./packages/kz-accounts/src/index.ts
 ```
 
+**esbuild ESM bundle quirk**: The bundle includes a `createRequire` banner so CommonJS packages (e.g. `better-sqlite3`) work inside the ESM output:
+```js
+import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+```
+
 ---
 
 ## 15. Environment Variables
 
 ### MCP Server (`.env` in `MCP 1C v1/`)
 
+**Static connection (single-tenant / local dev):**
+
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `ONEC_BASE_URL` | ✅ | — | 1C OData base URL (HTTPS enforced) |
+| `ONEC_BASE_URL` | ✅ | — | 1C OData base URL (HTTPS enforced; `/odata/standard.odata` auto-appended) |
 | `ONEC_USERNAME` | ✅ | — | 1C login |
 | `ONEC_PASSWORD` | ✅ | — | 1C password |
 | `ONEC_TIMEOUT_MS` | | 30000 | Request timeout in ms |
@@ -1012,12 +1088,39 @@ node onboard.mjs --company ... --url ... --user ... --pass ... --telegram ...
 | `ONEC_LOG_LEVEL` | | info | Log verbosity |
 | `ONEC_ALLOW_HTTP` | | false | Allow HTTP (local testing only) |
 | `ONEC_DEFAULT_ORG_GUID` | | — | Default org for multi-org databases |
-| `ENTITIES_DIR` | | `../Entities` | Path to offline schema .md files |
+| `ENTITIES_DIR` | | `/app/Entities` | Path to offline schema .md files |
 | `DOCFLOW_BASE_URL` | | not-configured | External docflow URL |
 | `DOCFLOW_USERNAME` | | — | Docflow login |
 | `DOCFLOW_PASSWORD` | | — | Docflow password |
 | `DOCFLOW_TIMEOUT_MS` | | 30000 | Docflow timeout |
 | `DOCFLOW_MAX_RETRIES` | | 3 | Docflow retry count |
+
+**LLM (optional — enables AI digest and chat agent):**
+
+| Variable | Default | Description |
+|---|---|---|
+| `LLM_BASE_URL` | — | Any OpenAI-compatible base URL (OpenAI, OpenRouter, DeepSeek, Ollama, Anthropic) |
+| `LLM_API_KEY` | — | API key (empty for Ollama) |
+| `LLM_MODEL` | — | Model name. Empty → fallback to `ANTHROPIC_API_KEY` → `claude-sonnet-4-6` |
+| `ANTHROPIC_API_KEY` | — | Fallback when `LLM_BASE_URL` not set |
+
+**Admin Telegram bot (zero-redeploy connection management):**
+
+| Variable | Default | Description |
+|---|---|---|
+| `ADMIN_BOT_TOKEN` | — | Bot token from @BotFather |
+| `ADMIN_CHAT_ID` | — | Your Telegram chat ID from @userinfobot. Bot ignores all other chats |
+| `CONNECTIONS_FILE` | `./data/connections.json` | Named connection registry (created with mode 0o600) |
+
+**Alert notifications (optional):**
+
+| Variable | Default | Description |
+|---|---|---|
+| `ALERT_TELEGRAM_TOKEN` | — | Separate bot token for anomaly alerts |
+| `ALERT_TELEGRAM_CHAT_ID` | — | Chat to receive alerts |
+| `ALERT_WEBHOOK_URL` | — | Slack-compatible webhook (Teams, custom) |
+| `ALERT_MIN_SEVERITY` | `warn` | Minimum severity: `info` · `warn` · `error` |
+| `ALERT_MIN_CONFIDENCE` | `60` | Minimum ML confidence (0–100) to trigger alert |
 
 ### Agent/Bot (`.env` in `agent-deepseek/`)
 
@@ -1143,4 +1246,38 @@ PRODUCTION (cost accounts)
 
 ---
 
-*End of CODEBASE.md — generated from full source read of all 77+ source files.*
+---
+
+## 18. HTTP Deployment (Fly.io)
+
+The MCP server runs as a stateless HTTP service, not stdio. Each client connects over HTTP and gets a UUID session.
+
+**Fly.io config** (`fly.toml`):
+- App: `ai-buh-v3`
+- Region: `ams` (Amsterdam)
+- VM: 512 MB RAM
+- Internal port: 3000
+- Health check: `GET /health`
+
+**Docker image** (non-root, ~150 MB):
+```
+Stage 1 (builder): node:22-alpine
+  npm ci --ignore-scripts
+  esbuild bundle → dist/http-server.bundle.mjs
+  copy chart.json → dist/data/
+
+Stage 2 (runtime): node:22-alpine
+  COPY dist/http-server.bundle.mjs
+  COPY dist/data/ → ./data/
+  COPY Entities/ → ./Entities/   (889 .md files)
+  adduser mcp (non-root)
+  chown mcp:mcp /app/data
+  CMD ["node", "http-server.bundle.mjs"]
+```
+
+**Named connections workflow** (zero-redeploy):
+1. DM the admin Telegram bot → `/add` → wizard collects name/url/user/pass → saves to `connections.json` on the volume
+2. MCP client connects with header `X-Connection-Name: <name>`
+3. Server loads credentials from `connections.json`, creates isolated session
+
+*End of CODEBASE.md — generated from full source read of all 77+ source files. Updated 2026-06-16.*

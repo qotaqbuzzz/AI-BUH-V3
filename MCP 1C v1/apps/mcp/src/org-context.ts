@@ -19,10 +19,18 @@ export interface OrgInfo {
 
 export interface ResolveResult {
   guid: string;
-  /** true when the LLM passed an unknown/hallucinated GUID and we substituted the default */
-  corrected: boolean;
-  /** the original GUID the caller supplied (present only when corrected=true, for logging) */
-  provided?: string;
+  /** always false in v2 — unknown GUIDs now throw instead of being silently corrected */
+  corrected: false;
+}
+
+/** Thrown when the caller passes an unknown, zero, or ambiguous organizationGuid. */
+export class OrgContextError extends Error {
+  readonly validOrgs: OrgInfo[];
+  constructor(message: string, validOrgs: OrgInfo[]) {
+    super(message);
+    this.name = "OrgContextError";
+    this.validOrgs = validOrgs;
+  }
 }
 
 export interface OrgContext {
@@ -34,9 +42,9 @@ export interface OrgContext {
    * @param provided - whatever the LLM/caller passed (may be stale or hallucinated)
    * Behavior:
    *   - valid known GUID     → use it as-is, corrected:false
-   *   - unknown/zero GUID    → ignore, use defaultGuid, corrected:true
-   *   - omitted              → use defaultGuid, corrected:false
-   *   - multi-org, no default → throw with the list of valid orgs
+   *   - omitted/empty        → use defaultGuid, corrected:false
+   *   - unknown/zero GUID    → throw OrgContextError with the list of valid orgs
+   *   - multi-org, no default → throw OrgContextError
    */
   resolveOrgGuid(provided?: string): ResolveResult;
 }
@@ -53,9 +61,9 @@ export async function buildOrgContext(
     const raw = await catalog.getOrganizations();
     orgs = raw.map((o) => ({ guid: o.Ref_Key, name: o.Description ?? "" }));
   } catch (fetchErr) {
-    // 1C unreachable at boot — tolerate if a default GUID is pre-configured via env.
-    // The server will start in "default-only" mode: resolveOrgGuid always returns that GUID.
-    if (!configuredDefault) throw fetchErr;
+    // 1C unreachable at boot, or catalog entity not exposed via OData — start in degraded mode.
+    // Tools requiring an org GUID will fail at call time rather than crashing the server.
+    console.error("[OrgContext] Could not load organizations at startup:", (fetchErr as Error).message);
   }
 
   const byGuid = new Map<string, OrgInfo>(
@@ -86,27 +94,38 @@ export async function buildOrgContext(
     resolveOrgGuid(provided?: string): ResolveResult {
       const norm = provided?.toLowerCase().trim();
 
-      if (norm && norm !== ZERO_GUID && byGuid.has(norm)) {
-        // Valid, recognized GUID — use canonical casing stored in the Map
+      // Omitted or empty → use defaultGuid (or throw if multi-org with no default)
+      if (!norm) {
+        if (!defaultGuid) {
+          const list = orgs.map((o) => `${o.name} (${o.guid})`).join("; ");
+          throw new OrgContextError(
+            `Multiple organizations found and ONEC_DEFAULT_ORG_GUID is not configured. ` +
+            `Provide a valid organizationGuid from onec_get_organizations. Available: ${list}`,
+            orgs,
+          );
+        }
+        return { guid: defaultGuid, corrected: false };
+      }
+
+      // Valid known GUID → use canonical casing stored in the Map
+      if (norm !== ZERO_GUID && byGuid.has(norm)) {
         return { guid: byGuid.get(norm)!.guid, corrected: false };
       }
 
-      if (!defaultGuid) {
-        const list = orgs.map((o) => `${o.name} (${o.guid})`).join("; ");
-        throw new Error(
-          `Multiple organizations found and ONEC_DEFAULT_ORG_GUID is not configured. ` +
-          `Provide a valid organizationGuid from onec_get_organizations, or set ` +
-          `ONEC_DEFAULT_ORG_GUID in .env. Available: ${list}`,
-        );
-      }
-
-      // Unknown/hallucinated/zero/omitted → substitute default
-      const corrected = !!(norm && norm !== ZERO_GUID);
-      return {
-        guid: defaultGuid,
-        corrected,
-        provided: corrected ? provided : undefined,
-      };
+      // Zero GUID or unknown GUID → strict reject (v1 silently corrected these; v2 does not)
+      const isZero = norm === ZERO_GUID;
+      console.warn(
+        `[OrgContext][v1-telemetry] ${isZero ? "zero" : "unknown"} guid "${provided}" rejected` +
+        (defaultGuid ? ` (would have silently corrected to "${defaultGuid}" before v2)` : ""),
+      );
+      const list = orgs.map((o) => `${o.name} (${o.guid})`).join("; ") ||
+        "(none loaded — check 1C connectivity)";
+      throw new OrgContextError(
+        isZero
+          ? `Zero GUID is not a valid organization identifier. Call onec_get_organizations to list valid GUIDs. Available: ${list}`
+          : `Unknown organizationGuid "${provided}". Call onec_get_organizations to list valid GUIDs. Available: ${list}`,
+        orgs,
+      );
     },
   };
 }
