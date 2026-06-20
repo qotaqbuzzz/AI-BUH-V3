@@ -3,7 +3,8 @@
 #   returns_value   — any non-zero numeric value in the answer
 #   no_error        — tool must not return isError:true
 #   amount          — exact amount within tolerance_pct (fill in after first live run)
-# must_cite_source: true → trail must have ≥1 ProvenanceRecord
+# must_call         — trail toolNames (direct mode) or agent tool calls (agent mode)
+# must_cite_source  — trail must have ≥1 ProvenanceRecord
 
 - id: AR-001
   domain: receivables
@@ -12,7 +13,7 @@
   expected:
     type: returns_value
     currency: KZT
-  must_call: [onec_answer]
+  must_call: [onec_debtors_report]
   must_cite_source: true
 
 - id: AR-002
@@ -22,7 +23,7 @@
   expected:
     type: returns_value
     currency: KZT
-  must_call: [onec_answer]
+  must_call: [onec_debtors_report, onec_contractor_balance]
   must_cite_source: true
   contractor_hint: "Агросиндикат"
 
@@ -33,7 +34,7 @@
   as_of_date: "2026-06-01"
   expected:
     type: no_error
-  must_call: [onec_answer]
+  must_call: [onec_debtors_report]
   must_cite_source: true
 
 - id: AR-004
@@ -42,7 +43,7 @@
   question_en: "Which contractor owes us the most?"
   expected:
     type: no_error
-  must_call: [onec_answer]
+  must_call: [onec_debtors_report]
   must_cite_source: true
 
 - id: AR-005
@@ -51,5 +52,5 @@
   question_en: "Show receivables on account 1210"
   expected:
     type: no_error
-  must_call: [onec_answer]
+  must_call: [onec_debtors_report]
   must_cite_source: true

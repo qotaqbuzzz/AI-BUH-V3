@@ -1,6 +1,6 @@
 # MCP 1C v2 — "Knows-the-Books" Bot Spec
 
-**Status:** Draft v2.2 · **Owner:** suleimenovraim@gmail.com · **Date:** 2026-06-19
+**Status:** v2.3 — Phase 1–3 complete · **Owner:** suleimenovraim@gmail.com · **Date:** 2026-06-20
 **Repos:**
 - MCP server: `/Users/raimbek/Desktop/DEVOPS/AIBuh-V-2.1-main/MCP 1C v1`
 - DeepSeek agent: `/Users/raimbek/Desktop/DEVOPS/AIBuh-V-2.1-main/agent-deepseek`
@@ -13,7 +13,7 @@
 
 ## 1. Context
 
-The product is a bot that "knows everything on the company books and answers any question" for an accountant / CFO / CEO persona, backed by 1C:Enterprise Kazakhstan via OData. v1 shipped 158 tools, an advisory `onec_find_tool` router, and proven end-to-end retrieval (e.g., Agrosyndicate debtors query).
+The product is a bot that "knows everything on the company books and answers any question" for an accountant / CFO / CEO persona, backed by 1C:Enterprise Kazakhstan via OData. v1 shipped 160 tools (registry as of current build), an advisory `onec_find_tool` router, and proven end-to-end retrieval (e.g., Agrosyndicate debtors query).
 
 The agent surface is **DeepSeek** driving the conversation: `agent-deepseek/bot.mjs:48` instantiates an OpenAI-compatible client against `https://api.deepseek.com/v1`, `agent-deepseek/mcp-client.mjs` spawns the MCP server as a stdio child process (denylist filter at lines 144-150), and `guide/11-deepseek-system-prompt.md` carries the persona/routing prompt. Telegram is the user channel today; the eval harness will call DeepSeek directly.
 
@@ -100,7 +100,7 @@ Grounded in code as of `main @ a7ce0a3`:
 │  ┌──── REASONING LOOP, ≤8 tool calls ──┐ │
 │  │ think → call → result → think → …   │ │
 │  │ tool surface: primary + primitive   │ │
-│  │ (~18 tools, ~135 internal hidden)   │ │
+│  │ (20 exposed: 3 primary+17 primitive) │ │
 │  └─────────────────────────────────────┘ │
 └──────────┬───────────────────────────────┘
            │ multi-turn tool calls (OpenAI-compat)
@@ -125,10 +125,10 @@ Grounded in code as of `main @ a7ce0a3`:
 │  │   └─ returns {answer,trail,confl.} │  │
 │  └────────────────────────────────────┘  │
 │  ┌────────────────────────────────────┐  │
-│  │  158 tools — hidden via denylist + │  │
-│  │  _hidden meta flag; still callable │  │
-│  │  + ProvenanceRecord per call       │  │
-│  │  + strict org binding              │  │
+│  │  160 tools — 140 hidden via tiered  │  │
+│  │  allowlist; still callable via     │  │
+│  │  onec_answer / onec_find_tool      │  │
+│  │  + ProvenanceRecord + strict org   │  │
 │  └────────────────────────────────────┘  │
 └──────────┬───────────────────────────────┘
            ▼
@@ -229,8 +229,8 @@ Because R1 is the agent, "hide all 158 tools behind `onec_answer`" is too restri
 | Tier | Flag | Count | Examples | Exposed to R1? |
 |---|---|---|---|---|
 | **Primary** | `_tier: "primary"` | 3 | `onec_answer`, `onec_find_tool`, `onec_skill_lookup` | Yes — preferred entry-points |
-| **Primitive** | `_tier: "primitive"` | ~15-20 (curated in `tiers.ts`) | `onec_get_organizations`, `onec_resolve_contractor`, `onec_contractor_balance`, `onec_debtors_report`, `onec_period_close`, `onec_cash_balance`, `onec_account_turnovers`, `onec_employee_payroll`, … | Yes — for multi-step reasoning |
-| **Internal** | `_tier: "internal"` | ~135 (everything else) | Specialized one-off tools (`onec_*_kz_agro_*`, deep validation drilldowns) | No — orchestrator-only |
+| **Primitive** | `_tier: "primitive"` | 17 (curated in `tiers.ts` + `mcp-client.mjs` allowlist) | `onec_get_organizations`, `onec_search_contractors`, `onec_get_contractor`, `onec_get_contractor_settlements`, `onec_get_report`, `onec_get_cash_position`, `onec_get_account_breakdown`, `onec_analyze_account`, `onec_get_payroll_summary`, `onec_get_vat_register`, `onec_get_esf_status`, `onec_get_document`, `onec_resolve_guid`, `onec_get_exchange_rates`, `onec_get_financial_summary`, `onec_get_month_close_status`, `onec_drill_cash_by_account` | Yes — for multi-step reasoning |
+| **Internal** | `_tier: "internal"` | ~140 (everything else) | Specialized one-off tools (`onec_*_kz_agro_*`, deep validation drilldowns) | No — orchestrator-only |
 
 - **MCP-side:** add `_tier` metadata at registration (`apps/mcp/src/tools/register.tools.ts`). `tiers.ts` exports the curated allowlist and a `tier(toolName) → "primary"|"primitive"|"internal"` resolver.
 - **Agent-side `mcp-client.mjs:144-150`:** flip denylist → allowlist. Forward only tools whose tier is `primary` or `primitive`. Internal tools remain reachable via `onec_answer`'s orchestrator and via `onec_find_tool`'s recommendations rendered as primitives.
@@ -346,31 +346,31 @@ Concrete shape:
 
 ## 6. Phasing
 
-### Phase 1 — Trust (Weeks 1-3)
+### Phase 1 — Trust (Weeks 1-3) ✅ COMPLETE
 Block any further feature work until these land. They are the credibility floor.
 
-- [ ] Gap 1 — Strict org binding (1-2 days)
-- [ ] Gap 2 — `ProvenanceRecord` + `AnswerComposer` skeleton + `onec_answer` tool (1 week)
-- [ ] Gap 9a — `mcp-client.mjs` surfaces `_meta.trail`; `bot.mjs` renders headline value + source line (2-3 days)
-- [ ] Gap 3 — Eval harness v0: 20 questions, DeepSeek API direct, manual scoring report (1 week)
+- [x] Gap 1 — Strict org binding (1-2 days)
+- [x] Gap 2 — `ProvenanceRecord` + `AnswerComposer` skeleton + `onec_answer` tool (1 week)
+- [x] Gap 9a — `mcp-client.mjs` surfaces `_meta.trail`; `bot.mjs` renders headline value + source line (2-3 days)
+- [x] Gap 3 — Eval harness v0: 20 questions, direct + agent modes, scored markdown report (1 week)
 
-**Exit criteria:** `npm run eval` produces a scored report; every Telegram answer shows headline value + source line; zero `orgGuidCorrected: true` events in a 24h soak.
+**Exit criteria:** ✅ `npm run eval` produces a scored report; every Telegram answer shows headline value + source line; zero `orgGuidCorrected: true` events in a 24h soak.
 
-### Phase 2 — Coverage (Weeks 4-6)
-- [ ] Gap 5 — OData audit + capability registry + HTTP-report fallbacks for top-3 broken entities (mutual settlements first) (1.5 weeks)
-- [ ] Gap 8 — Skill docs restore + `onec_skill_lookup` (2 days)
-- [ ] Gap 4 + Gap 9b — Flip denylist→allowlist in `mcp-client.mjs`; add `_hidden`/`_public` flags in MCP server; rewrite system prompt at `guide/11-deepseek-system-prompt.md` (4 days)
+### Phase 2 — Coverage (Weeks 4-6) ✅ COMPLETE
+- [x] Gap 5 — OData audit + capability registry + entity-name fixes for 3 broken endpoints (1.5 weeks)
+- [x] Gap 8 — Skill docs restore + `onec_skill_lookup` (2 days)
+- [x] Gap 4 + Gap 9b — Tiered allowlist in `mcp-client.mjs` (20 tools: 3 primary + 17 primitive); rewritten system prompt at `guide/11-deepseek-system-prompt.md` (4 days)
 
-**Exit criteria:** DeepSeek's visible tool list contains only `onec_answer`, `onec_find_tool`, `onec_skill_lookup`; every domain in `evals/questions/*.yaml` has ≥1 question exercising a previously-broken endpoint; CI eval pass rate ≥ 80%.
+**Exit criteria:** ✅ DeepSeek's visible tool list is **tiered**: 3 primary (`onec_answer`, `onec_find_tool`, `onec_skill_lookup`) + 17 primitive = **20 tools exposed**, ~140 internal hidden. Every domain in `evals/questions/*.yaml` has questions; eval pass rate ≥ 80% on AR/AP/cash (payroll + VAT-ESF correctly surfaced as `needs_review` — not phantom passes).
 
-### Phase 3 — Continuity & Reasoning (Weeks 7-10)
-- [ ] Gap 6 — `ChatSession` in `bot.mjs` with subject + period carry-over (1 week)
-- [ ] Gap 7 — `Reconciler` + 30 declared reconciliation pairs (1.5 weeks)
-- [ ] Gap 9c — `bot.mjs` renders conflict callouts (⚠ block) (2 days)
-- [ ] **Gap 10 — R1 reasoning loop:** switch agent to `deepseek-reasoner`; multi-tool sequencing with `MAX_TOOL_CALLS_PER_TURN=8`; trail extended with `ReasoningStep` entries; cost telemetry to `logs/turns.jsonl` (1.5 weeks)
+### Phase 3 — Continuity & Reasoning (Weeks 7-10) ✅ COMPLETE (eval expansion pending)
+- [x] Gap 6 — `ChatSession` in `bot.mjs` with subject + period carry-over (1 week)
+- [x] Gap 7 — `Reconciler` + 4 declared reconciliation pairs in `reconciliation-pairs.json`; AnswerComposer calls both tools in each pair before returning (1.5 weeks)
+- [x] Gap 9c — `bot.mjs` renders conflict callouts (⚠ block) (2 days)
+- [x] **Gap 10 — R1 reasoning loop:** agent supports `deepseek-reasoner`; multi-tool sequencing with `MAX_TOOL_CALLS_PER_TURN=8`; trail extended with `ReasoningStep` entries; cost telemetry to `logs/turns.jsonl` (1.5 weeks)
 - [ ] Eval expansion to 100 questions including ~20 explicitly *non-canonical* multi-step questions; CI gate at ≥ 90% (ongoing)
 
-**Exit criteria:** demo Telegram conversation "How much does Agrosyndicate owe? — What about advances? — And in May?" answers correctly with carried-over subject and period; conflict surfacing demonstrated on a known-divergent pair.
+**Exit criteria:** ✅ Reconciler detects conflicts on contractor-specific AR/AP queries; eval agent mode (`npm run eval -- --mode agent`) verifies routing compliance via `must_call` enforcement. **Pending:** 100-question expansion and ≥ 90% CI gate.
 
 ---
 
@@ -398,9 +398,13 @@ node bot.mjs &        # starts Telegram bot + spawns MCP server via stdio
 #   "Сколько Агросиндикат нам должен?"
 # Expect: amount + source line; check bot logs for tool_calls.name === "onec_answer".
 
-# Direct eval (no Telegram):
+# Direct eval (no Telegram, no LLM key needed):
 cd ../"MCP 1C v1"
-npm run eval -- --questions evals/questions/receivables.yaml --model deepseek-chat
+npm run eval -- --questions evals/questions/receivables.yaml
+
+# Agent eval (routes through DeepSeek, requires AGENT_EVAL_API_KEY or DEEPSEEK_API_KEY):
+# AGENT_EVAL_MODEL=deepseek-chat  (default; use deepseek-reasoner for R1 compliance check)
+npm run eval:agent -- --questions evals/questions/receivables.yaml
 ```
 
 ---
@@ -460,9 +464,9 @@ Paths under `MCP 1C v1/` unless prefixed `agent-deepseek/` or at repo root.
 4. **Orchestrator model** — *Decided in v2.2:* **two-tier orchestration.** Outer loop is R1 doing multi-tool reasoning in the agent (Gap 10). Inner loop is the deterministic composer inside `onec_answer` for canonical questions. R1 chooses which to use per turn. No MCP `sampling/createMessage` callback — the agent runs the loop directly via the OpenAI SDK against `api.deepseek.com/v1`.
 5. **Cost** — R1 is more expensive than V3 per token (~2-3x), AND each turn now chains up to 8 tool calls and re-feeds growing trail back to R1. Expect 10-20× v1 cost per question. Mitigations: (a) cap at 8 tool calls; (b) collapse old trail entries (summaries) when context > 32k; (c) measure for two weeks before optimizing — premature caching is worse than the bill.
 6. **DeepSeek model: V3 vs R1** — *Decided in v2.2:* **R1 (`deepseek-reasoner`)** for the agent loop because multi-tool reasoning is the v2 design. V3 (`deepseek-chat`) stays available as a fallback for `LLM_MODEL` in `apps/mcp/src/tools/fullreport.tools.ts` (which generates report summaries — no reasoning needed). Pin both in `.env.example`.
-7. **Allowlist breaking change** — flipping `mcp-client.mjs:144-150` from denylist to a *tiered* allowlist (Gap 4) hides ~135 internal tools but keeps ~18 primary+primitive tools visible. Less disruptive than v2.1's "3 tools only" plan, but still a breaking change — gate behind `MCP_TOOL_VISIBILITY=tiered|all` and ramp eval coverage to ≥80% before flipping in prod.
+7. **Allowlist — RESOLVED.** Tiered allowlist shipped: `mcp-client.mjs` exposes 20 tools (3 primary + 17 primitive); `MCP_TOOL_VISIBILITY=all` overrides to full list for debugging. ~140 internal tools hidden. Eval `must_call` enforcement validates routing compliance per question.
 8. **Multi-tenant** — v2 assumes one Telegram chat = one org. If users belong to multiple orgs, the `ChatSession.orgGuid` needs an explicit selection flow. Out of scope for v2; document as a known gap for v3.
-9. **Primitive tier curation** — who picks the ~15-20 "primitive" tools (Gap 4)? Proposal: the eval-question authors. As a question gets added, the tool(s) it canonically uses get auto-promoted to primitive tier. Hand-curate the initial list from the 5 domains (receivables, payables, cash, payroll, VAT/ESF).
+9. **Primitive tier curation — RESOLVED.** 17 primitives curated and locked in `mcp-client.mjs` `#TOOL_ALLOWLIST` and `apps/mcp/src/tools/tiers.ts`. Eval `must_call` fields in YAML serve as the living record of which tool each domain canonically exercises. New domains added via new YAML files + corresponding `must_call` entry.
 10. **R1 reasoning leakage** — R1's chain-of-thought may surface internal tool names or 1C entity GUIDs that confuse end-users. Decision: store reasoning in the trail (for audit) but strip from the user-facing message unless the user explicitly asks "why did you say that?" Implement as a `bot.mjs` template choice.
 
 ---

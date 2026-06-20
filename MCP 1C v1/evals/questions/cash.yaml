@@ -1,26 +1,25 @@
 # Cash position eval questions (денежные средства)
-# Note: onec_answer Phase 1 returns "unknown intent" for cash — expected to fail until
-# the cash pattern is added to AnswerComposer. These questions verify graceful degradation.
+# Cash pattern implemented in AnswerComposer — expected to pass.
 
 - id: CA-001
   domain: cash
   question_ru: "Какой остаток по кассе на сегодня?"
   question_en: "What is the current cash balance?"
   expected:
-    type: no_error
-  must_call: [onec_answer]
-  must_cite_source: false
-  note: "Phase 1 — onec_answer falls back to receivables pattern; cash added in Phase 2"
+    type: returns_value
+    currency: KZT
+  must_call: [onec_get_cash_position]
+  must_cite_source: true
 
 - id: CA-002
   domain: cash
   question_ru: "Сколько денег на расчётном счёте?"
   question_en: "What is the balance in our bank account?"
   expected:
-    type: no_error
-  must_call: [onec_answer]
-  must_cite_source: false
-  note: "Phase 1 — same as CA-001"
+    type: returns_value
+    currency: KZT
+  must_call: [onec_get_cash_position]
+  must_cite_source: true
 
 - id: CA-003
   domain: cash
@@ -28,7 +27,7 @@
   question_en: "Cash and bank balances as of 2026-06-01"
   as_of_date: "2026-06-01"
   expected:
-    type: no_error
-  must_call: [onec_answer]
-  must_cite_source: false
-  note: "Phase 1 — same as CA-001"
+    type: returns_value
+    currency: KZT
+  must_call: [onec_get_cash_position]
+  must_cite_source: true

@@ -1,4 +1,4 @@
-import type { ReportsService, CatalogService } from "@aibos/services";
+import type { ReportsService, CatalogService, CashManagementService } from "@aibos/services";
 import type {
   ProvenanceRecord,
   ValueEntry,
@@ -14,7 +14,7 @@ function detectIntent(q: string): Intent {
   if (/дебитор|receivable|owe us|owes us|debtors|задолженн|должн.{0,8}нам/.test(s)) return "receivables";
   if (/кредитор|payable|мы должны|owe them|creditor|payables/.test(s)) return "payables";
   if (/касс|cash|деньг|наличн/.test(s)) return "cash";
-  return "receivables"; // safe fallback: receivables is the most common canonical query
+  return "unknown";
 }
 
 function extractContractorHint(question: string, context?: AnswerContext): string | undefined {
@@ -51,6 +51,7 @@ export class AnswerComposer {
   constructor(
     private readonly reports: ReportsService,
     private readonly catalog: CatalogService,
+    private readonly cash: CashManagementService,
   ) {}
 
   async compose(
@@ -72,7 +73,7 @@ export class AnswerComposer {
 
       trail.push({
         toolName: "onec_debtors_report",
-        odataUrl: "AccumulationRegister_ВзаиморасчетыСКонтрагентами",
+        odataUrl: "AccountingRegister_Типовой/Balance",
         asOf: nowIso(),
         orgGuid,
         rowCount: result.rows.length,
@@ -90,6 +91,30 @@ export class AnswerComposer {
       } else if (context?.subject?.type === "contractor" && context.subject.guid) {
         rows = rows.filter((r) => r.contractorGuid === context.subject!.guid);
         subject = context.subject.name;
+      }
+
+      // For a specific contractor, also call contractor balance so Reconciler can detect conflicts.
+      const reconcileGuid = context?.subject?.guid ?? (contractorHint && rows.length > 0 ? rows[0].contractorGuid : undefined);
+      if (reconcileGuid) {
+        const { result: balResult, durationMs: balDms } = await timed(() =>
+          this.reports.getContractorBalance(reconcileGuid, asOfDate),
+        );
+        trail.push({
+          toolName: "onec_contractor_balance",
+          odataUrl: "AccountingRegister_Типовой/Balance",
+          asOf: nowIso(),
+          orgGuid,
+          rowCount: balResult.rows.length,
+          durationMs: balDms,
+          cacheHit: false,
+        });
+        toolValues.set("onec_contractor_balance", [{
+          label: balResult.contractorName,
+          amount: balResult.totals.balanceDr - balResult.totals.balanceCr,
+          currency: "KZT",
+          asOf: asOfDate,
+          source: "onec_contractor_balance",
+        }]);
       }
 
       const total = Math.round(rows.reduce((s, r) => s + r.balanceDr - r.balanceCr, 0) * 100) / 100;
@@ -131,7 +156,7 @@ export class AnswerComposer {
 
       trail.push({
         toolName: "onec_creditors_report",
-        odataUrl: "AccumulationRegister_ВзаиморасчетыСКонтрагентами",
+        odataUrl: "AccountingRegister_Типовой/Balance",
         asOf: nowIso(),
         orgGuid,
         rowCount: result.rows.length,
@@ -149,6 +174,31 @@ export class AnswerComposer {
       } else if (context?.subject?.type === "contractor" && context.subject.guid) {
         rows = rows.filter((r) => r.contractorGuid === context.subject!.guid);
         subject = context.subject.name;
+      }
+
+      // For a specific contractor, also call contractor balance so Reconciler can detect conflicts.
+      const reconcileGuid = context?.subject?.guid ?? (contractorHint && rows.length > 0 ? rows[0].contractorGuid : undefined);
+      if (reconcileGuid) {
+        const { result: balResult, durationMs: balDms } = await timed(() =>
+          this.reports.getContractorBalance(reconcileGuid, asOfDate),
+        );
+        trail.push({
+          toolName: "onec_contractor_balance",
+          odataUrl: "AccountingRegister_Типовой/Balance",
+          asOf: nowIso(),
+          orgGuid,
+          rowCount: balResult.rows.length,
+          durationMs: balDms,
+          cacheHit: false,
+        });
+        toolValues.set("onec_contractor_balance", [{
+          label: balResult.contractorName,
+          // Cr - Dr = positive means we owe them, matching creditors report sign convention
+          amount: balResult.totals.balanceCr - balResult.totals.balanceDr,
+          currency: "KZT",
+          asOf: asOfDate,
+          source: "onec_contractor_balance",
+        }]);
       }
 
       const total = Math.round(rows.reduce((s, r) => s + r.balanceCr - r.balanceDr, 0) * 100) / 100;
@@ -172,12 +222,59 @@ export class AnswerComposer {
       };
     }
 
+    if (intent === "cash") {
+      const { result, durationMs } = await timed(() =>
+        this.cash.getCashPosition(asOfDate, orgGuid),
+      );
+
+      trail.push({
+        toolName: "onec_get_cash_position",
+        odataUrl: "AccountingRegister_Типовой/Balance",
+        asOf: nowIso(),
+        orgGuid,
+        rowCount: result.positions.length,
+        durationMs,
+        cacheHit: false,
+      });
+
+      const entry: ValueEntry = {
+        label: "Денежные средства",
+        amount: result.totalKzt,
+        currency: "KZT",
+        asOf: asOfDate,
+        source: "onec_get_cash_position",
+      };
+      values.push(entry);
+      toolValues.set("onec_get_cash_position", [entry]);
+
+      const breakdown = result.positions
+        .filter((p) => p.balanceKzt !== 0)
+        .map((p) => `• ${p.accountCode} ${p.accountName}: ${p.balanceKzt.toLocaleString("ru-KZ")} KZT`)
+        .join("\n");
+
+      return {
+        answer: [
+          `Денежные средства на ${asOfDate}:`,
+          `Итого: ${result.totalKzt.toLocaleString("ru-KZ")} KZT`,
+          breakdown ? `\nПо счетам:\n${breakdown}` : "",
+        ].filter(Boolean).join("\n"),
+        values,
+        trail,
+        conflicts: this.reconciler.reconcile(toolValues),
+        followups: [
+          "Показать движение по кассе (1010)?",
+          "Расшифровать по банковским счетам (1030)?",
+          "Сравнить с началом месяца?",
+        ],
+      };
+    }
+
     return {
-      answer: "Вопрос не распознан как канонический паттерн. Попробуйте уточнить: дебиторы, кредиторы или cash.",
+      answer: "unknown intent — use onec_find_tool to discover the right primitive for this question.",
       values: [],
       trail: [],
       conflicts: [],
-      followups: ["Сколько дебиторской задолженности?", "Сколько кредиторской задолженности?"],
+      followups: ["Сколько дебиторской задолженности?", "Сколько кредиторской задолженности?", "Остаток денежных средств?"],
     };
   }
 }

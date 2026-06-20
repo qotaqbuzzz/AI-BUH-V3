@@ -18,7 +18,9 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test packages/services/src/**/*.test.ts",
     "eval": "tsx evals/runner.ts",
-    "eval:dry": "tsx evals/runner.ts --dry-run"
+    "eval:dry": "tsx evals/runner.ts --dry-run",
+    "eval:agent": "tsx evals/runner.ts --mode agent",
+    "eval:agent:dry": "tsx evals/runner.ts --mode agent --dry-run"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",

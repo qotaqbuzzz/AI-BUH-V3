@@ -201,7 +201,7 @@ export async function createServer(config: AppConfig): Promise<{ server: McpServ
   registerWorkflowCatalogTools(server, resolve(__dirname, "../../../ONE_C_WORKFLOWS.md"));
   registerEsfTools(server, esfService);
   // Answer composer — registered before the routing tool so onec_find_tool's count includes it.
-  registerAnswerTools(server, reportsService, catalogService);
+  registerAnswerTools(server, reportsService, catalogService, cashManagementService);
   // Skill docs lookup — reads restored kz-agro-*.md files
   registerSkillLookupTools(server, resolve(__dirname, "../../skills"));
   // Routing tool — registered LAST so its description can quote the final tool count.

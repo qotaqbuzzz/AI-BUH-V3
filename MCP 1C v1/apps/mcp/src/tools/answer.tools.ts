@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { ReportsService, CatalogService } from "@aibos/services";
+import type { ReportsService, CatalogService, CashManagementService } from "@aibos/services";
 import { AnswerComposer } from "../composer/AnswerComposer.js";
 import { wrapError, resolveOrg } from "./utils.js";
 
@@ -8,8 +8,9 @@ export function registerAnswerTools(
   server: McpServer,
   reports: ReportsService,
   catalog: CatalogService,
+  cash: CashManagementService,
 ): void {
-  const composer = new AnswerComposer(reports, catalog);
+  const composer = new AnswerComposer(reports, catalog, cash);
 
   server.tool(
     "onec_answer",
@@ -18,7 +19,7 @@ export function registerAnswerTools(
       "Accepts a natural-language question in Russian or English, routes it to the right 1C data source,",
       "and returns a structured answer with a provenance trail (which tools were called, which OData entity,",
       "row counts, timing) and suggested follow-up questions.",
-      "Canonical patterns handled: receivables (дебиторы), payables (кредиторы).",
+      "Canonical patterns handled: receivables (дебиторы), payables (кредиторы), cash (касса/банк).",
       "If the answer contains 'unknown intent', fall back to onec_find_tool to discover the right primitive.",
     ].join(" "),
     {

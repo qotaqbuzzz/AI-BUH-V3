@@ -1,4 +1,4 @@
-import type { ComposedAnswer } from "../apps/mcp/src/composer/ProvenanceRecord.js";
+import type { ComposedAnswer, ProvenanceRecord } from "../apps/mcp/src/composer/ProvenanceRecord.js";
 
 export interface EvalQuestion {
   id: string;
@@ -32,10 +32,26 @@ export interface ScoreResult {
   note?: string;
 }
 
+/**
+ * Domains with a live AnswerComposer pattern.
+ * no_error verdicts for other domains are downgraded to needs_review until patterns land.
+ */
+const IMPLEMENTED_DOMAINS = new Set(["receivables", "payables", "cash"]);
+
+/**
+ * @param q           Eval question definition
+ * @param rawResult   Raw text from the MCP tool (expected to be ComposedAnswer JSON)
+ * @param durationMs  Wall-clock time for the call
+ * @param toolsCalled MCP tool names the agent actually called (agent mode only).
+ *                    When provided, must_call is enforced against this list (all domains).
+ *                    When absent (direct mode), must_call is enforced against trail toolNames
+ *                    for IMPLEMENTED_DOMAINS only.
+ */
 export function score(
   q: EvalQuestion,
   rawResult: string,
   durationMs: number,
+  toolsCalled?: string[],
 ): ScoreResult {
   const base = {
     id: q.id,
@@ -54,7 +70,7 @@ export function score(
     return { ...base, verdict: "fail", reason: "Response is not valid JSON" };
   }
 
-  // Check for MCP-level error response
+  // MCP-level error response
   if ((answer as unknown as { isError?: boolean }).isError) {
     const errText = (answer as unknown as { content?: Array<{ text: string }> })
       .content?.[0]?.text ?? "unknown";
@@ -68,13 +84,60 @@ export function score(
     return { ...base, verdict: "fail", reason: "Expected provenance trail but trail is empty" };
   }
 
+  // ── must_call enforcement ──────────────────────────────────────────────────
+
+  // Agent mode: verify agent called the declared tools (enforced for all domains).
+  if (q.must_call?.length && toolsCalled !== undefined) {
+    const missing = q.must_call.filter((t) => !toolsCalled.includes(t));
+    if (missing.length > 0) {
+      return {
+        ...base,
+        verdict: "fail",
+        reason: `agent must_call not satisfied: ${missing.join(", ")} (called: ${toolsCalled.join(", ") || "none"})`,
+      };
+    }
+  }
+
+  // Direct mode: verify declared tools appear in provenance trail.
+  // Only for IMPLEMENTED_DOMAINS — other domains get no_error→needs_review below.
+  if (q.must_call?.length && toolsCalled === undefined && IMPLEMENTED_DOMAINS.has(q.domain)) {
+    const trailTools = new Set(
+      (answer.trail ?? [])
+        .filter((t): t is ProvenanceRecord => "toolName" in t)
+        .map((t) => t.toolName),
+    );
+    const missing = q.must_call.filter((t) => !trailTools.has(t));
+    if (missing.length > 0) {
+      return {
+        ...base,
+        verdict: "fail",
+        reason: `must_call not in trail: ${missing.join(", ")} (trail has: ${[...trailTools].join(", ") || "none"})`,
+      };
+    }
+  }
+
+  // ── expected type switch ───────────────────────────────────────────────────
+
   switch (q.expected.type) {
-    case "no_error":
+    case "no_error": {
+      // Domains without an AnswerComposer pattern yet → needs_review, not a phantom pass.
+      if (!IMPLEMENTED_DOMAINS.has(q.domain)) {
+        return {
+          ...base,
+          verdict: "needs_review",
+          reason: `Domain '${q.domain}' has no AnswerComposer pattern yet`,
+        };
+      }
+      // Even within implemented domains, "unknown intent" means the question slipped through.
+      if (answer.answer?.includes("unknown intent")) {
+        return { ...base, verdict: "needs_review", reason: "AnswerComposer: unknown intent" };
+      }
       return { ...base, verdict: "pass", reason: "Tool responded without error" };
+    }
 
     case "returns_value": {
       if (base.valuesReturned === 0) {
-        const isUnknown = answer.answer?.includes("не распознан") || answer.answer?.includes("unknown intent");
+        const isUnknown = answer.answer?.includes("unknown intent");
         if (isUnknown) {
           return { ...base, verdict: "needs_review", reason: "AnswerComposer: unknown intent — add pattern" };
         }

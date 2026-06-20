@@ -1,4 +1,5 @@
 # Accounts payable eval questions (кредиторская задолженность)
+# must_call — trail toolNames (direct mode) or agent tool calls (agent mode)
 
 - id: AP-001
   domain: payables
@@ -7,7 +8,7 @@
   expected:
     type: returns_value
     currency: KZT
-  must_call: [onec_answer]
+  must_call: [onec_creditors_report]
   must_cite_source: true
 
 - id: AP-002
@@ -17,7 +18,7 @@
   as_of_date: "2026-06-01"
   expected:
     type: no_error
-  must_call: [onec_answer]
+  must_call: [onec_creditors_report]
   must_cite_source: true
 
 - id: AP-003
@@ -27,7 +28,7 @@
   expected:
     type: returns_value
     currency: KZT
-  must_call: [onec_answer]
+  must_call: [onec_creditors_report]
   must_cite_source: true
 
 - id: AP-004
@@ -36,5 +37,5 @@
   question_en: "Do we owe more to creditors than debtors owe us?"
   expected:
     type: no_error
-  must_call: [onec_answer]
+  must_call: [onec_creditors_report]
   must_cite_source: true
